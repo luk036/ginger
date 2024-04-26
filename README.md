@@ -1,5 +1,5 @@
 [![Documentation Status](https://readthedocs.org/projects/ginger/badge/?version=latest)](https://ginger.readthedocs.io/en/latest/?badge=latest)
-[![codecov](https://codecov.io/gh/luk036/ginger/branch/main/graph/badge.svg?token=hbjnTDpNeg)](https://codecov.io/gh/luk036/ginger)
+[![codecov](https://codecov.io/gh/luk036/ginger/graph/badge.svg?token=z4Gk9gMtsq)](https://codecov.io/gh/luk036/ginger)
 
 # 🫚 ginger
 
