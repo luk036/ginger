@@ -1,6 +1,7 @@
 from cmath import exp
-from math import pi
-from typing import List, Tuple, Union
+# from concurrent.futures import ThreadPoolExecutor
+from math import cos, sin, pi
+from typing import List, Tuple
 
 from lds_gen.lds import VdCorput
 
@@ -9,11 +10,10 @@ from .robin import Robin
 # from pytest import approx
 from .rootfinding import Options, horner_eval, horner_eval_f
 
-FoC = Union[float, complex]
-PI = pi
+TWO_PI: float = 2 * pi
 
 
-def horner_backward(coeffs1: List, degree: int, alpha: FoC) -> FoC:
+def horner_backward(coeffs1: List, degree: int, alpha: complex) -> complex:
     """
     The `horner_backward` function evaluates a polynomial using the Horner's method in backward form.
 
@@ -22,7 +22,7 @@ def horner_backward(coeffs1: List, degree: int, alpha: FoC) -> FoC:
     :param degree: The degree of the polynomial, which is the highest power of the variable in the polynomial. For example, if the polynomial is 3x^2 + 2x + 1, then the degree is 2
     :type degree: int
     :param alpha: The value of alpha is a constant that is used in the Horner's method for backward polynomial evaluation. It is typically a scalar value
-    :type alpha: FoC
+    :type alpha: complex
     :return: The function `horner_backward` returns the value of the polynomial evaluated at the given alpha value.
 
     Examples:
@@ -41,7 +41,7 @@ def horner_backward(coeffs1: List, degree: int, alpha: FoC) -> FoC:
     return coeffs1[-(degree + 1)]
 
 
-def initial_aberth(coeffs: List[FoC]) -> List[complex]:
+def initial_aberth(coeffs: List[float]) -> List[complex]:
     """
     The `initial_aberth` function calculates the initial guesses for the roots of a polynomial using the
     Aberth method.
@@ -50,7 +50,7 @@ def initial_aberth(coeffs: List[FoC]) -> List[complex]:
                    element in the list represents the coefficient of a term in the polynomial, starting
                    from the highest degree term down to the constant term. For example, if the polynomial is
                    `3x^3 - 2x^2 + 5x - 1`, then `coeffs` would be `[3, -2, 5, -1]`
-    :type coeffs: List[FoC]
+    :type coeffs: List[float]
     :return: The function `initial_aberth` returns a list of complex numbers.
 
     Examples:
@@ -58,19 +58,17 @@ def initial_aberth(coeffs: List[FoC]) -> List[complex]:
         >>> z0s = initial_aberth(h)
     """
     degree: int = len(coeffs) - 1
-    center: FoC = -coeffs[1] / (degree * coeffs[0])
-    p_center: FoC = horner_eval_f(coeffs, center)
-    re: FoC = pow(-p_center, 1.0 / degree)
-    k = 2 * PI / degree
-    return [center + re * exp(k * (0.25 + i) * 1j) for i in range(degree)]
-    # z0s: List[complex] = []
-    # for i in range(degree):
-    #     theta = k * (0.25 + i)
-    #     z0s += [center + re * exp(theta * 1j)]
-    # return z0s
+    center: float = -coeffs[1] / (degree * coeffs[0])
+    p_center: float = horner_eval_f(coeffs, center)
+    re: complex = pow(-p_center, 1.0 / degree)
+    k = TWO_PI / degree
+    return [
+        center + re * (cos(theta) + sin(theta) * 1j)
+        for theta in (k * (0.25 + i) for i in range(degree))
+    ]
 
 
-def initial_aberth_orig(coeffs: List[FoC]) -> List[complex]:
+def initial_aberth_orig(coeffs: List[float]) -> List[complex]:
     """
     The function `initial_aberth_orig` calculates the initial approximations for the roots of a
     polynomial using the Aberth method.
@@ -79,7 +77,7 @@ def initial_aberth_orig(coeffs: List[FoC]) -> List[complex]:
                    element in the list represents the coefficient of a term in the polynomial, starting
                    from the highest degree term down to the constant term. For example, if the polynomial
                    is `3x^3 - 2x^2 + 5x - 1`, then `coeffs` would be `[3, -2, 5, -1]`
-    :type coeffs: List[FoC]
+    :type coeffs: List[float]
     :return: The function `initial_aberth_orig` returns a list of complex numbers.
 
     Examples:
@@ -87,16 +85,14 @@ def initial_aberth_orig(coeffs: List[FoC]) -> List[complex]:
         >>> z0s = initial_aberth_orig(h)
     """
     degree: int = len(coeffs) - 1
-    center: FoC = -coeffs[1] / (degree * coeffs[0])
-    p_center: FoC = horner_eval_f(coeffs, center)
-    re: FoC = pow(-p_center, 1.0 / degree)
-    k = 2 * PI / degree
-    return [center + re * exp(k * (0.25 + i) * 1j) for i in range(degree)]
-    # z0s: List[complex] = []
-    # for i in range(degree):
-    #     theta = k * (0.25 + i)
-    #     z0s += [center + re * exp(theta * 1j)]
-    # return z0s
+    center: float = -coeffs[1] / (degree * coeffs[0])
+    p_center: float = horner_eval_f(coeffs, center)
+    re: complex = pow(-p_center, 1.0 / degree)
+    k = TWO_PI / degree
+    return [
+        center + re * (cos(theta) + sin(theta) * 1j)
+        for theta in (k * (0.25 + i) for i in range(degree))
+    ]
 
 
 #
@@ -117,7 +113,7 @@ def initial_aberth_orig(coeffs: List[FoC]) -> List[complex]:
 #                             ‾‾‾‾‾
 #                             j ≠ i
 def aberth(
-    coeffs: List[FoC], zs: List[complex], options: Options = Options()
+    coeffs: List[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
     """
     The `aberth` function implements Aberth's method for polynomial root-finding.
@@ -125,7 +121,7 @@ def aberth(
     :param coeffs: The `coeffs` parameter is a list of coefficients of a polynomial. The
                    coefficients are ordered from highest degree to lowest degree. For example, if the
                    polynomial is `3x^2 + 2x + 1`, then the `coeffs` list would be `[3, 2, 1]`
-    :type coeffs: List[FoC]
+    :type coeffs: List[float]
     :param zs: The `zs` parameter in the `aberth` function represents the initial guesses for
                the roots of the polynomial. It is a list of complex numbers. Each complex number represents
                an initial guess for a root of the polynomial
@@ -195,10 +191,10 @@ def initial_aberth_autocorr(coeffs: List[float]) -> List[complex]:
     degree //= 2
     vgen = VdCorput(2)
     vgen.reseed(1)
-    return [re * exp(2 * PI * vgen.pop() * 1j) for _ in range(degree)]
+    return [re * exp(TWO_PI * vgen.pop() * 1j) for _ in range(degree)]
     # z0s = []
     # for _ in range(degree):
-    #     vdc = 2 * PI * vgen.pop()
+    #     vdc = TWO_PI * vgen.pop()
     #     z0s += [re * exp(vdc * 1j)]
     # return z0s
 
@@ -226,7 +222,7 @@ def initial_aberth_autocorr_orig(coeffs: List[float]) -> List[complex]:
     if abs(re) > 1:
         re = 1 / re
     degree //= 2
-    k = 2 * PI / degree
+    k = TWO_PI / degree
     return [re * exp(k * (0.25 + i) * 1j) for i in range(degree)]
     # z0s = []
     # for i in range(degree):
