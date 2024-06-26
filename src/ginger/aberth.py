@@ -1,9 +1,10 @@
 from cmath import exp
+
 # from concurrent.futures import ThreadPoolExecutor
 from math import cos, sin, pi
 from typing import List, Tuple
 
-from lds_gen.lds import VdCorput
+from lds_gen.lds import VdCorput, Circle
 
 from .robin import Robin
 
@@ -61,10 +62,10 @@ def initial_aberth(coeffs: List[float]) -> List[complex]:
     center: float = -coeffs[1] / (degree * coeffs[0])
     p_center: float = horner_eval_f(coeffs, center)
     re: complex = pow(-p_center, 1.0 / degree)
-    k = TWO_PI / degree
+    # k = TWO_PI / degree
+    c_gen = Circle(2)
     return [
-        center + re * (cos(theta) + sin(theta) * 1j)
-        for theta in (k * (0.25 + i) for i in range(degree))
+        center + re * complex(x, y) for y, x in (c_gen.pop() for _ in range(degree))
     ]
 
 
