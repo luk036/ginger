@@ -4,9 +4,9 @@ from math import cos, pi, sqrt
 from typing import Any, List, Tuple, Union
 
 from lds_gen.lds import VdCorput
+from mywheel.robin import Robin
 
 from .matrix2 import Matrix2
-from .robin import Robin
 from .vector2 import Vector2
 
 Num = Union[float, complex]

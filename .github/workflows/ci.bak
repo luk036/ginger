@@ -76,8 +76,10 @@ jobs:
       - name: Retrieve pre-built distribution files
         uses: actions/download-artifact@v3
         with: { name: python-distribution-files, path: dist/ }
-      - name: Run tests
-        run: pip install git+https://github.com/luk036/lds-gen.git
+      - name: install dependencies
+        run: |
+          pip install git+https://github.com/luk036/lds-gen.git
+          pip install git+https://github.com/luk036/mywheel.git
       - name: Run tests
         run: >-
           pipx run --python '${{ steps.setup-python.outputs.python-path }}'

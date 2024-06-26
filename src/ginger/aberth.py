@@ -5,8 +5,7 @@ from math import cos, sin, pi
 from typing import List, Tuple
 
 from lds_gen.lds import VdCorput, Circle
-
-from .robin import Robin
+from mywheel.robin import Robin
 
 # from pytest import approx
 from .rootfinding import Options, horner_eval, horner_eval_f

@@ -2,8 +2,8 @@ from math import cos, pi, sqrt
 from typing import List
 
 from lds_gen.lds import VdCorput
+from mywheel.robin import Robin
 
-from .robin import Robin
 from .rootfinding import Options, delta, horner, suppress
 from .vector2 import Vector2
 
