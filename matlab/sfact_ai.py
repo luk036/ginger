@@ -1,24 +1,21 @@
 import numpy as np
+import pytest
 from typing import List
 
 
-def leja_order(points):
+def leja(points: List[complex]) -> List[complex]:
     # Check if input is empty
     if len(points) == 0:
-        raise ValueError("Input must be a non-empty list or array of points.")
-
-    # Convert to numpy array for easier manipulation
-    points = np.array(points)
+        raise ValueError("Input must be a non-empty vector of points.")
 
     # Start with the point having the smallest magnitude
     idx = np.argmin(np.abs(points))
     leja_ordered_points = [points[idx]]
-    # Remove this point from further consideration
-    points = np.delete(points, idx)
+    points.pop(idx)  # Remove this point from further consideration
 
-    while len(points) > 0:
+    while points:
         # Compute distances from remaining points to the last point in leja_order
-        distances = np.abs(points - leja_ordered_points[-1])
+        distances = np.abs(np.array(points) - leja_ordered_points[-1])
 
         # Find the index of the point with the maximum minimum distance
         next_idx = np.argmax(distances)
@@ -27,9 +24,9 @@ def leja_order(points):
         leja_ordered_points.append(points[next_idx])
 
         # Remove this point from further consideration
-        points = np.delete(points, next_idx)
+        points.pop(next_idx)
 
-    return np.array(leja_ordered_points)
+    return leja_ordered_points
 
 
 def seprts(p: List[float]) -> np.ndarray:
@@ -58,7 +55,7 @@ def sfact(p: List[float]):
         return p, []
 
     r = seprts(p)
-    r_leja_ordered = leja_order(r.tolist())  # Convert list for leja function
+    r_leja_ordered = leja(r.tolist())  # Convert list for leja function
     h = np.poly(r_leja_ordered)
 
     if np.all(np.isreal(p)):
@@ -69,7 +66,7 @@ def sfact(p: List[float]):
     return h, r_leja_ordered
 
 
-# Example usage
-points = np.array([1 + 1j, 2 - 2j, 0.5 + 0.5j, -1 + 0j, 3 + 3j])
-leja_ordered = leja_order(points)
-print(leja_ordered)
+def test_leja_empty_input():
+    """Test that leja function raises an error for empty input."""
+    with pytest.raises(ValueError, match="Input must be a non-empty vector of points."):
+        leja([])
