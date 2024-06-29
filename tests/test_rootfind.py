@@ -106,8 +106,8 @@ def test_suppress4():
 def test_suppress5():
     vri = Vector2(-2, 0)
     vrj = Vector2(4, 5)
-    vrk = Vector2(3, 7)
-    vrl = Vector2(-3, 1)
+    Vector2(3, 7)
+    Vector2(-3, 1)
 
     vA = Vector2(3, 3)
     vA1 = Vector2(1, 2)
