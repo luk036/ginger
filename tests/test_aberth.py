@@ -1,5 +1,6 @@
 from ginger.aberth import (
     aberth,
+    aberth_mt,
     aberth_autocorr,
     initial_aberth,
     initial_aberth_autocorr,
@@ -22,6 +23,11 @@ def test_aberth1():
     print([niter_orig, found])
     assert niter <= niter_orig
 
+    z0s = initial_aberth(h)
+    _, niter, found = aberth_mt(h, z0s)
+    print([niter, found])
+    assert niter <= 7
+
 
 def test_aberth2():
     h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
@@ -36,6 +42,12 @@ def test_aberth2():
     _, niter_orig, found = aberth(h, z0s)
     print([niter_orig, found])
     assert niter <= niter_orig
+
+    z0s = initial_aberth(h)
+    zs, niter, found = aberth_mt(h, z0s)
+    print([niter, found])
+    print([z for z in zs])
+    assert niter <= 7
 
 
 r = [
@@ -109,6 +121,13 @@ def test_aberth_fir():
         print(z)
     assert niter <= 12
     assert niter <= niter_orig
+
+    z0s = initial_aberth(r)
+    zs, niter, found = aberth_mt(r, z0s, opt)
+    print([niter, found])
+    for z in zs:
+        print(z)
+    assert niter <= 12
 
 
 def test_aberth_autocorr_fir():

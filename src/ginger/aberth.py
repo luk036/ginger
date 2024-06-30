@@ -1,4 +1,4 @@
-# from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from math import cos, sin, pi
 from typing import List, Tuple
 
@@ -95,6 +95,45 @@ def initial_aberth_orig(coeffs: List[float]) -> List[complex]:
     ]
 
 
+def aberth_job(
+    coeffs: List[float],
+    i: int,
+    zsc: List[complex],
+) -> Tuple[float, int, complex]:
+    zi = zsc[i]
+    p_eval, coeffs1 = horner_eval(coeffs, zi)
+    tol_i = abs(p_eval)
+    p1_eval, _ = horner_eval(coeffs1[:-1], zi)
+    for j, zj in enumerate(zsc):
+        if i != j:
+            p1_eval -= p_eval / (zi - zj)
+    zi -= p_eval / p1_eval
+    return tol_i, i, zi
+
+
+def aberth_mt(
+    coeffs: List[float], zs: List[complex], options: Options = Options()
+) -> Tuple[List[complex], int, bool]:
+    with ThreadPoolExecutor() as executor:
+        for niter in range(options.max_iters):
+            tolerance = 0.0
+            futures = []
+
+            for i in range(len(zs)):
+                futures.append(executor.submit(aberth_job, coeffs, i, zs))
+
+            for future in futures:
+                tol_i, i, zi = future.result()
+                if tol_i > tolerance:
+                    tolerance = tol_i
+                zs[i] = zi
+
+            if tolerance < options.tolerance:
+                return zs, niter, True
+
+    return zs, options.max_iters, False
+
+
 #
 #                     P ⎛z ⎞
 #          new          ⎝ i⎠
@@ -144,25 +183,16 @@ def aberth(
         >>> found
         True
     """
-    M = len(zs)
-    # degree = len(coeffs) - 1
-    converged = [False] * M
-    robin = Robin(M)
     for niter in range(options.max_iters):
         tolerance = 0.0
-        for i, (zi, ci) in enumerate(zip(zs, converged)):
-            if ci:
-                continue
+        for i, zi in enumerate(zs):
             p_eval, coeffs1 = horner_eval(coeffs, zi)
             tol_i = abs(p_eval)
-            if tol_i < options.tol_ind:
-                converged[i] = True
-                continue
             p1_eval, _ = horner_eval(coeffs1[:-1], zi)
             tolerance = max(tol_i, tolerance)
-            # for j in filter(lambda j: j != i, range(M)):  # exclude i
-            for j in robin.exclude(i):
-                p1_eval -= p_eval / (zi - zs[j])
+            for j, zj in enumerate(zs):
+                if i != j:
+                    p1_eval -= p_eval / (zi - zs[j])
             zs[i] -= p_eval / p1_eval
         if tolerance < options.tolerance:
             return zs, niter, True
@@ -185,20 +215,10 @@ def initial_aberth_autocorr(coeffs: List[float]) -> List[complex]:
         >>> z0s = initial_aberth_autocorr(h)
     """
 
-    # degree: int = len(coeffs) - 1
-    # re: float = pow(abs(coeffs[-1]), 1.0 / degree)
-    # if abs(re) > 1:
-    #     re = 1 / re
-    # degree //= 2
-    # vgen = VdCorput(2)
-    # vgen.reseed(1)
-    # return [re * exp(TWO_PI * vgen.pop() * 1j) for _ in range(degree)]
     degree: int = len(coeffs) - 1
     center: float = -coeffs[1] / (degree * coeffs[0])
     p_center: float = horner_eval_f(coeffs, center)
     re: float = pow(abs(p_center), 1.0 / degree)
-    # re: float = pow(abs(coeffs[-1]), 1.0 / degree)
-    # re: complex = pow(coeffs[-1], 1.0 / degree)
     if abs(re) > 1:
         re = 1 / re
     degree //= 2
@@ -265,22 +285,16 @@ def aberth_autocorr(
         >>> opt.tolerance = 1e-8
         >>> zs, niter, found = aberth_autocorr(h, z0s, opt)
     """
-    M: int = len(zs)
-    converged: List[bool] = [False] * M
-    robin = Robin(M)
     for niter in range(options.max_iters):
         tolerance: float = 0.0
-        for i, (zi, ci) in enumerate(zip(zs, converged)):
-            if ci:
-                continue
+        for i, zi in enumerate(zs):
             p_eval, coeffs1 = horner_eval(coeffs, zi)
             tol_i = abs(p_eval)
-            if tol_i < options.tol_ind:
-                converged[i] = True
-                continue
             p1_eval, _ = horner_eval(coeffs1[:-1], zi)
             tolerance = max(tol_i, tolerance)
-            for j in robin.exclude(i):
+            for j, zj in enumerate(zs):
+                if i == j:
+                    continue
                 zj = zs[j]
                 p1_eval -= p_eval / (zi - zj)
                 zsn = 1.0 / zj
