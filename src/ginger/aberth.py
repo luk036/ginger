@@ -3,7 +3,7 @@ from math import cos, sin, pi
 from typing import List, Tuple
 
 from lds_gen.lds import Circle
-from mywheel.robin import Robin
+# from mywheel.robin import Robin
 
 # from pytest import approx
 from .rootfinding import Options, horner_eval, horner_eval_f
@@ -192,7 +192,7 @@ def aberth(
             tolerance = max(tol_i, tolerance)
             for j, zj in enumerate(zs):
                 if i != j:
-                    p1_eval -= p_eval / (zi - zs[j])
+                    p1_eval -= p_eval / (zi - zj)
             zs[i] -= p_eval / p1_eval
         if tolerance < options.tolerance:
             return zs, niter, True
@@ -295,7 +295,6 @@ def aberth_autocorr(
             for j, zj in enumerate(zs):
                 if i == j:
                     continue
-                zj = zs[j]
                 p1_eval -= p_eval / (zi - zj)
                 zsn = 1.0 / zj
                 p1_eval -= p_eval / (zi - zsn)
