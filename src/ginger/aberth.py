@@ -57,10 +57,9 @@ def initial_aberth(coeffs: List[float]) -> List[complex]:
     """
     degree: int = len(coeffs) - 1
     center: float = -coeffs[1] / (degree * coeffs[0])
-    p_center: float = horner_eval_f(coeffs, center)
-    re: complex = pow(-p_center, 1.0 / degree)
-    # re: float = pow(abs(p_center), 1.0 / degree)
-    # k = TWO_PI / degree
+    poly_c: float = horner_eval_f(coeffs, center)
+    re: float | complex = pow(-poly_c, 1.0 / degree)
+    # re: float = pow(abs(poly_c), 1.0 / degree)
     c_gen = Circle(2)
     return [
         center + re * complex(x, y) for y, x in (c_gen.pop() for _ in range(degree))
@@ -85,9 +84,8 @@ def initial_aberth_orig(coeffs: List[float]) -> List[complex]:
     """
     degree: int = len(coeffs) - 1
     center: float = -coeffs[1] / (degree * coeffs[0])
-    p_center: float = horner_eval_f(coeffs, center)
-    re: complex = pow(-p_center, 1.0 / degree)
-    # re: float = pow(abs(p_center), 1.0 / degree)
+    poly_c: float = horner_eval_f(coeffs, center)
+    re: float | complex = pow(-poly_c, 1.0 / degree)
     k = TWO_PI / degree
     return [
         center + re * (cos(theta) + sin(theta) * 1j)
@@ -215,16 +213,16 @@ def initial_aberth_autocorr(coeffs: List[float]) -> List[complex]:
         >>> z0s = initial_aberth_autocorr(h)
     """
 
-    degree: int = len(coeffs) - 1
+    degree: int = len(coeffs) - 1  # assume even
     center: float = -coeffs[1] / (degree * coeffs[0])
-    p_center: float = horner_eval_f(coeffs, center)
-    re: float = pow(abs(p_center), 1.0 / degree)
-    if abs(re) > 1:
-        re = 1 / re
-    degree //= 2
+    poly_c: float = horner_eval_f(coeffs, center)
+    re: float = pow(abs(poly_c), 1.0 / degree)
+    if abs(re) > 1.0:
+        re = 1.0 / re
     c_gen = Circle(2)
     return [
-        center + re * complex(x, y) for y, x in (c_gen.pop() for _ in range(degree))
+        center + re * complex(x, y)
+        for y, x in (c_gen.pop() for _ in range(degree // 2))
     ]
 
 
@@ -245,8 +243,8 @@ def initial_aberth_autocorr_orig(coeffs: List[float]) -> List[complex]:
     """
     degree: int = len(coeffs) - 1
     center: float = -coeffs[1] / (degree * coeffs[0])
-    p_center: float = horner_eval_f(coeffs, center)
-    re: float = pow(abs(p_center), 1.0 / degree)
+    poly_c: float = horner_eval_f(coeffs, center)
+    re: float = pow(abs(poly_c), 1.0 / degree)
     # re: float = pow(abs(coeffs[-1]), 1.0 / degree)
     if abs(re) > 1:
         re = 1 / re
@@ -296,11 +294,50 @@ def aberth_autocorr(
                 if i == j:
                     continue
                 p1_eval -= p_eval / (zi - zj)
-                zsn = 1.0 / zj
-                p1_eval -= p_eval / (zi - zsn)
+                p1_eval -= p_eval / (zi - 1.0 / zj)
             zs[i] -= p_eval / p1_eval
         if tolerance < options.tolerance:
             return zs, niter, True
+    return zs, options.max_iters, False
+
+
+def aberth_autocorr_job(
+    coeffs: List[float],
+    i: int,
+    zsc: List[complex],
+) -> Tuple[float, int, complex]:
+    zi = zsc[i]
+    p_eval, coeffs1 = horner_eval(coeffs, zi)
+    tol_i = abs(p_eval)
+    p1_eval, _ = horner_eval(coeffs1[:-1], zi)
+    for j, zj in enumerate(zsc):
+        if i != j:
+            p1_eval -= p_eval / (zi - zj)
+            p1_eval -= p_eval / (zi - 1.0 / zj)
+    zi -= p_eval / p1_eval
+    return tol_i, i, zi
+
+
+def aberth_autocorr_mt(
+    coeffs: List[float], zs: List[complex], options: Options = Options()
+) -> Tuple[List[complex], int, bool]:
+    with ThreadPoolExecutor() as executor:
+        for niter in range(options.max_iters):
+            tolerance = 0.0
+            futures = []
+
+            for i in range(len(zs)):
+                futures.append(executor.submit(aberth_autocorr_job, coeffs, i, zs))
+
+            for future in futures:
+                tol_i, i, zi = future.result()
+                if tol_i > tolerance:
+                    tolerance = tol_i
+                zs[i] = zi
+
+            if tolerance < options.tolerance:
+                return zs, niter, True
+
     return zs, options.max_iters, False
 
 

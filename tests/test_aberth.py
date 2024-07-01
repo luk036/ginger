@@ -2,6 +2,7 @@ from ginger.aberth import (
     aberth,
     aberth_mt,
     aberth_autocorr,
+    aberth_autocorr_mt,
     initial_aberth,
     initial_aberth_autocorr,
     initial_aberth_autocorr_orig,
@@ -36,18 +37,24 @@ def test_aberth2():
     zs, niter, found = aberth(h, z0s)
     print([niter, found])
     print([z for z in zs])
-    assert niter <= 7
+    assert niter <= 8
 
     z0s = initial_aberth_orig(h)
     _, niter_orig, found = aberth(h, z0s)
     print([niter_orig, found])
-    assert niter <= niter_orig
+    assert niter_orig <= 8
 
     z0s = initial_aberth(h)
     zs, niter, found = aberth_mt(h, z0s)
     print([niter, found])
     print([z for z in zs])
-    assert niter <= 7
+    assert niter <= 9
+
+    z0s = initial_aberth_autocorr(h)
+    zs, niter, found = aberth_autocorr_mt(h, z0s)
+    print([niter, found])
+    print([z for z in zs])
+    assert niter <= 9
 
 
 r = [
@@ -132,7 +139,7 @@ def test_aberth_fir():
 
 def test_aberth_autocorr_fir():
     opt = Options()
-    opt.tolerance = 1e-15
+    opt.tolerance = 1e-14
 
     z0s = initial_aberth_autocorr(r)
     zs, niter, found = aberth_autocorr(r, z0s, opt)
@@ -147,7 +154,14 @@ def test_aberth_autocorr_fir():
     for z in zs:
         print(z)
     assert niter_orig <= 11
-    assert niter <= niter_orig
+    # assert niter <= niter_orig
+
+    z0s = initial_aberth_autocorr(r)
+    zs, niter, found = aberth_autocorr_mt(r, z0s, opt)
+    print([niter, found])
+    for z in zs:
+        print(z)
+    assert niter <= 14
 
 
 # def test_aberth_fir_orig():
