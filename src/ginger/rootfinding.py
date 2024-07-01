@@ -223,6 +223,8 @@ def horner_eval(coeffs: List, zval) -> Tuple[Any, List]:
         >>> coeffs = [1, -8, -72, 382, 727, -2310]
         >>> horner_eval(coeffs, 3)
         (960, [1, -5, -87, 121, 1090, 960])
+        >>> horner_eval(coeffs, 3+0j)
+        ((960+0j), [1, (-5+0j), (-87+0j), (121+0j), (1090+0j), (960+0j)])
     """
     coeffs = list(accumulate(coeffs, lambda res, coeff: res * zval + coeff))
     return coeffs[-1], coeffs
