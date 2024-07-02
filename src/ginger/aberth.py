@@ -8,7 +8,7 @@ from lds_gen.lds import Circle
 # from pytest import approx
 from .rootfinding import Options, horner_eval, horner_eval_f
 
-TWO_PI: float = 2 * pi
+TWO_PI: float = 2.0 * pi
 
 
 def horner_backward(coeffs1: List, degree: int, alpha: complex) -> complex:
@@ -58,11 +58,11 @@ def initial_aberth(coeffs: List[float]) -> List[complex]:
     degree: int = len(coeffs) - 1
     center: float = -coeffs[1] / (degree * coeffs[0])
     poly_c: float = horner_eval_f(coeffs, center)
-    re: float | complex = pow(-poly_c, 1.0 / degree)
-    # re: float = pow(abs(poly_c), 1.0 / degree)
+    radius: float | complex = pow(-poly_c, 1.0 / degree)
+    # radius: float = pow(abs(poly_c), 1.0 / degree)
     c_gen = Circle(2)
     return [
-        center + re * complex(x, y) for y, x in (c_gen.pop() for _ in range(degree))
+        center + radius * complex(x, y) for y, x in (c_gen.pop() for _ in range(degree))
     ]
 
 
@@ -85,10 +85,10 @@ def initial_aberth_orig(coeffs: List[float]) -> List[complex]:
     degree: int = len(coeffs) - 1
     center: float = -coeffs[1] / (degree * coeffs[0])
     poly_c: float = horner_eval_f(coeffs, center)
-    re: float | complex = pow(-poly_c, 1.0 / degree)
+    radius: float | complex = pow(-poly_c, 1.0 / degree)
     k = TWO_PI / degree
     return [
-        center + re * (cos(theta) + sin(theta) * 1j)
+        center + radius * (cos(theta) + sin(theta) * 1j)
         for theta in (k * (0.25 + i) for i in range(degree))
     ]
 
@@ -216,12 +216,12 @@ def initial_aberth_autocorr(coeffs: List[float]) -> List[complex]:
     degree: int = len(coeffs) - 1  # assume even
     center: float = -coeffs[1] / (degree * coeffs[0])
     poly_c: float = horner_eval_f(coeffs, center)
-    re: float = pow(abs(poly_c), 1.0 / degree)
-    if abs(re) > 1.0:
-        re = 1.0 / re
+    radius: float = pow(abs(poly_c), 1.0 / degree)
+    if abs(radius) > 1.0:
+        radius = 1.0 / radius
     c_gen = Circle(2)
     return [
-        center + re * complex(x, y)
+        center + radius * complex(x, y)
         for y, x in (c_gen.pop() for _ in range(degree // 2))
     ]
 
@@ -244,14 +244,14 @@ def initial_aberth_autocorr_orig(coeffs: List[float]) -> List[complex]:
     degree: int = len(coeffs) - 1
     center: float = -coeffs[1] / (degree * coeffs[0])
     poly_c: float = horner_eval_f(coeffs, center)
-    re: float = pow(abs(poly_c), 1.0 / degree)
-    # re: float = pow(abs(coeffs[-1]), 1.0 / degree)
-    if abs(re) > 1:
-        re = 1 / re
+    radius: float = pow(abs(poly_c), 1.0 / degree)
+    # radius: float = pow(abs(coeffs[-1]), 1.0 / degree)
+    if abs(radius) > 1:
+        radius = 1 / radius
     degree //= 2
     k = TWO_PI / degree
     return [
-        center + re * (cos(theta) + sin(theta) * 1j)
+        center + radius * (cos(theta) + sin(theta) * 1j)
         for theta in (k * (0.25 + i) for i in range(degree))
     ]
 

@@ -5,7 +5,7 @@ from typing import List, Tuple
 # Assuming Options class is defined elsewhere and imported with proper annotations
 from .rootfinding import Options, horner_eval_f
 
-TWO_PI: float = 2 * pi
+TWO_PI: float = 2.0 * pi
 
 
 # def horner_eval_f(coeffs: List[float], zval: float) -> float:
@@ -17,13 +17,13 @@ def horner_eval_c(coeffs: List[float], zval: complex) -> complex:
 
 
 def initial_aberth(coeffs: List[float]) -> List[complex]:
-    degree = len(coeffs) - 1
-    center = -coeffs[1] / (coeffs[0] * degree)
-    Pc = horner_eval_f(coeffs, center)
-    re = pow(-Pc, 1.0 / degree)
-    k = TWO_PI / degree
+    degree: int = len(coeffs) - 1
+    center: float = -coeffs[1] / (coeffs[0] * degree)
+    poly_c: float = horner_eval_f(coeffs, center)
+    radius: float | complex = pow(-poly_c, 1.0 / degree)
+    k: float = TWO_PI / degree
     return [
-        center + re * (cos(theta) + sin(theta) * 1j)
+        center + radius * (cos(theta) + sin(theta) * 1j)
         for theta in (k * (0.25 + i) for i in range(degree))
     ]
 

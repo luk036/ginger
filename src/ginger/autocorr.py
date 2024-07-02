@@ -27,16 +27,16 @@ def initial_autocorr_new(coeffs: List[float]) -> List[Vector2]:
         >>> vr0s = initial_autocorr(h)
     """
     degree = len(coeffs) - 1
-    re = pow(abs(coeffs[-1]), 1.0 / degree)
-    if re > 1:
-        re = 1 / re
+    radius = pow(abs(coeffs[-1]), 1.0 / degree)
+    if radius > 1:
+        radius = 1 / radius
     degree //= 2
     # k = PI / degree
-    m = re * re
-    # vr0s = [Vector2(2 * re * cos(k * i), -m) for i in range(1, degree, 2)]
+    m = radius * radius
+    # vr0s = [Vector2(2 * radius * cos(k * i), -m) for i in range(1, degree, 2)]
     vgen = VdCorput(2)
     vgen.reseed(1)
-    return [Vector2(2 * re * cos(PI * vgen.pop()), -m) for _ in range(1, degree, 2)]
+    return [Vector2(2 * radius * cos(PI * vgen.pop()), -m) for _ in range(1, degree, 2)]
 
 
 def initial_autocorr(coeffs: List[float]) -> List[Vector2]:
@@ -52,13 +52,13 @@ def initial_autocorr(coeffs: List[float]) -> List[Vector2]:
     :return: The function `initial_autocorr` returns a list of `Vector2` objects.
     """
     degree = len(coeffs) - 1
-    re = pow(abs(coeffs[-1]), 1.0 / degree)
-    if re < 1:  # use those outside the unit circle
-        re = 1 / re
+    radius = pow(abs(coeffs[-1]), 1.0 / degree)
+    if radius < 1:  # use those outside the unit circle
+        radius = 1 / radius
     degree //= 2
     k = PI / degree
-    m = re * re
-    return [Vector2(2 * re * cos(k * i), -m) for i in range(1, degree, 2)]
+    m = radius * radius
+    return [Vector2(2 * radius * cos(k * i), -m) for i in range(1, degree, 2)]
 
 
 def pbairstow_autocorr(
