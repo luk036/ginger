@@ -216,7 +216,8 @@ def initial_aberth_autocorr(coeffs: List[float]) -> List[complex]:
     degree: int = len(coeffs) - 1  # assume even
     center: float = -coeffs[1] / (degree * coeffs[0])
     poly_c: float = horner_eval_f(coeffs, center)
-    radius: float = pow(abs(poly_c), 1.0 / degree)
+    radius: float | complex = pow(-poly_c, 1.0 / degree)
+    # radius: float | complex = pow(-coeffs[-1], 1.0 / degree)
     if abs(radius) > 1.0:
         radius = 1.0 / radius
     c_gen = Circle(2)

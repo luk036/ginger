@@ -314,8 +314,8 @@ def initial_guess_orig(coeffs: List[float]) -> List[Vector2]:
     degree = len(coeffs) - 1
     center = -coeffs[1] / (degree * coeffs[0])
     # p_eval = np.poly1d(coeffs)
-    p_center = horner_eval_f(coeffs, center)
-    radius = pow(abs(p_center), 1 / degree)
+    poly_c = horner_eval_f(coeffs, center)
+    radius = pow(abs(poly_c), 1 / degree)
     m = center * center + radius * radius
     degree //= 2
     degree *= 2  # make even
@@ -345,12 +345,11 @@ def initial_guess(coeffs: List[float]) -> List[Vector2]:
         >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
         >>> vr0s = initial_guess(h)
     """
-    degree = len(coeffs) - 1
-    center = -coeffs[1] / (degree * coeffs[0])
-    # p_eval = np.poly1d(coeffs)
-    p_center = horner_eval_f(coeffs, center)
-    radius = pow(abs(p_center), 1 / degree)
-    m = center * center + radius * radius
+    degree: int = len(coeffs) - 1
+    center: float = -coeffs[1] / (degree * coeffs[0])
+    poly_c: float = horner_eval_f(coeffs, center)
+    radius: float = pow(abs(poly_c), 1.0 / degree)
+    m: float = center * center + radius * radius
     degree //= 2
     degree *= 2  # make even
     # k = PI / degree
