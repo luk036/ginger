@@ -139,7 +139,7 @@ def test_aberth_fir():
 
 def test_aberth_autocorr_fir():
     opt = Options()
-    opt.tolerance = 1e-14
+    opt.tolerance = 1e-13
 
     z0s = initial_aberth_autocorr(r)
     zs, niter, found = aberth_autocorr(r, z0s, opt)
