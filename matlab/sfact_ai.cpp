@@ -8,11 +8,28 @@
 
 using ComplexNum = std::complex<double>;
 
-// Function to calculate the Euclidean norm (magnitude) of a complex number
+/**
+ * Calculates the Euclidean norm (magnitude) of a complex number.
+ *
+ * @param c The complex number to calculate the magnitude for.
+ * @return The Euclidean norm (magnitude) of the input complex number.
+ */
 double magnitude(const ComplexNum &c) {
   return std::sqrt(c.real() * c.real() + c.imag() * c.imag());
 }
 
+/**
+ * Reorders a vector of complex numbers using the Leja ordering algorithm.
+ *
+ * The Leja ordering algorithm is a method for ordering a set of complex numbers
+ * in a way that maximizes the minimum distance between consecutive points in the
+ * ordered sequence. This is useful for numerical methods that rely on the
+ * distribution of points, such as polynomial interpolation.
+ *
+ * @param points A vector of complex numbers to be reordered.
+ * @return A new vector containing the Leja-ordered complex numbers.
+ * @throws std::runtime_error if the input vector is empty.
+ */
 std::vector<ComplexNum> lejaOrder(std::vector<ComplexNum> points) {
   // Check if input is empty
   if (points.empty()) {
@@ -55,6 +72,14 @@ std::vector<ComplexNum> lejaOrder(std::vector<ComplexNum> points) {
   return lejaOrderedPoints;
 }
 
+/**
+ * Separates the roots of a polynomial into two groups: those inside the unit
+ * circle, and those on the unit circle.
+ *
+ * @param p A vector of real polynomial coefficients.
+ * @return A vector of complex roots, with the roots inside the unit circle
+ * followed by the roots on the unit circle.
+ */
 std::vector<std::complex<double>> seprts(const std::vector<double> &p) {
   constexpr double SN = 0.0001;
   std::vector<std::complex<double>> rts;
@@ -90,6 +115,18 @@ std::vector<std::complex<double>> seprts(const std::vector<double> &p) {
   return irts;
 }
 
+/**
+ * Computes the Schur-Cohn factorization of a real polynomial.
+ *
+ * The Schur-Cohn factorization separates the roots of a polynomial into two
+ * groups: those inside the unit circle, and those on the unit circle. The
+ * function returns the coefficients of the inner roots and the complex roots
+ * (both inner and on the unit circle) in Leja order.
+ *
+ * @param p A vector of real polynomial coefficients.
+ * @return A pair containing the coefficients of the inner roots and the
+ * complex roots (both inner and on the unit circle) in Leja order.
+ */
 std::pair<std::vector<double>, std::vector<std::complex<double>>>
 sfact(const std::vector<double> &p) {
   if (p.size() == 1) {

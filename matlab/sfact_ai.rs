@@ -1,6 +1,18 @@
 use num_complex::Complex;
 use std::cmp::Ordering;
 
+/// Computes the Leja order of a vector of complex numbers.
+///
+/// The Leja order is a way of ordering a set of complex numbers such that the minimum distance between consecutive points is maximized. This can be useful for numerical methods that rely on well-conditioned sets of points, such as polynomial interpolation.
+///
+/// # Arguments
+/// * `points` - A vector of complex numbers to be ordered.
+///
+/// # Returns
+/// A vector of complex numbers in Leja order.
+///
+/// # Panics
+/// Panics if the input vector is empty.
 pub fn leja_order(mut points: Vec<Complex<f64>>) -> Vec<Complex<f64>> {
     // Check if input is empty and return an error if so
     if points.is_empty() {
@@ -36,6 +48,21 @@ pub fn leja_order(mut points: Vec<Complex<f64>>) -> Vec<Complex<f64>> {
     leja_ordered_points
 }
 
+/// Separates the roots of a polynomial into two groups: those inside the unit circle, and those on the unit circle.
+///
+/// The function takes a slice of polynomial coefficients `p` and returns a vector of complex roots. The roots are separated into two groups:
+/// - `irts`: roots that are inside the unit circle (i.e., their absolute value is less than 1 - `SN`)
+/// - `orts`: roots that are on the unit circle (i.e., their absolute value is between 1 - `SN` and 1 + `SN`)
+///
+/// The function assumes that the number of roots on the unit circle is even. If this is not the case, it prints a warning message and returns an empty vector.
+///
+/// Note that the function does not sort the roots on the unit circle by angle, as this would require additional logic or a crate for complex number handling. The sorting is left as a placeholder for a future implementation.
+///
+/// # Arguments
+/// * `p` - A slice of polynomial coefficients
+///
+/// # Returns
+/// A vector of complex roots, separated into two groups: those inside the unit circle, and those on the unit circle.
 fn seprts(p: &[f64]) -> Vec<Complex<f64>> {
     const SN: f64 = 0.0001;
     let rts: Vec<Complex<f64>> = p
@@ -69,6 +96,19 @@ fn seprts(p: &[f64]) -> Vec<Complex<f64>> {
     [irts, orts].concat()
 }
 
+/// Computes the spectral factorization of a polynomial.
+///
+/// The `sfact` function takes a slice of polynomial coefficients `p` and returns the spectral factorization of the polynomial. The spectral factorization is represented as a tuple containing:
+/// - `h_real`: the real coefficients of the spectral factor
+/// - `r_leja_ordered`: the roots of the polynomial, ordered using the Leja ordering algorithm.
+///
+/// The function first separates the roots of the polynomial into two groups: those inside the unit circle, and those on the unit circle. It then constructs the spectral factor `h` using the ordered roots, and normalizes the coefficients of `h` to ensure numerical stability.
+///
+/// # Arguments
+/// * `p` - A slice of polynomial coefficients
+///
+/// # Returns
+/// A tuple containing the real coefficients of the spectral factor and the roots of the polynomial, ordered using the Leja ordering algorithm.
 fn sfact(p: &[f64]) -> (Vec<f64>, Vec<Complex<f64>>) {
     if p.len() == 1 {
         return (vec![p[0]], vec![]);
