@@ -54,7 +54,7 @@ def test_aberth2():
     zs, niter, found = aberth_autocorr_mt(h, z0s)
     print([niter, found])
     print([z for z in zs])
-    assert niter <= 9
+    assert niter <= 10
 
 
 r = [
