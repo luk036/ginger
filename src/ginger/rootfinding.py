@@ -1,3 +1,36 @@
+"""
+Rootfinding.py
+
+This code is a collection of functions and classes designed to find the roots of polynomial equations. In mathematics, finding the roots of a polynomial means determining the values of x that make the polynomial equal to zero. This is a common problem in various fields like engineering, physics, and computer science.
+
+The main purpose of this code is to implement the Bairstow's method, which is an algorithm for finding complex roots of polynomials. It takes as input the coefficients of a polynomial and initial guesses for the roots, and outputs the calculated roots of the polynomial.
+
+The code starts by importing necessary modules and defining some utility classes and functions. The main algorithm is implemented in the pbairstow_even function. This function takes three inputs:
+
+1. A list of coefficients representing the polynomial
+2. A list of initial guesses for the roots
+3. An optional Options object to control the algorithm's behavior
+
+The output of pbairstow_even is a tuple containing:
+
+1. A list of the calculated roots
+2. The number of iterations performed
+3. A boolean indicating whether the algorithm successfully converged
+
+The algorithm works by iteratively refining the initial guesses for the roots. It uses a technique called "suppression" to improve the accuracy of each root estimate. The process continues until either the desired accuracy is achieved or the maximum number of iterations is reached.
+
+Some important parts of the code include:
+
+- The initial_guess function, which generates starting points for the algorithm
+- The suppress function, which helps improve the accuracy of root estimates
+- The horner function, which efficiently evaluates polynomials
+- The delta function, which calculates adjustments to the root estimates
+
+The code also includes helper functions for polynomial evaluation and manipulation, such as horner_eval and horner_backward.
+
+Overall, this code provides a sophisticated tool for solving polynomial equations, even when the roots are complex numbers. It's designed to be efficient and accurate, making it useful for applications that require finding roots of high-degree polynomials.
+"""
+
 from functools import reduce
 from itertools import accumulate
 from math import cos, pi, sqrt
