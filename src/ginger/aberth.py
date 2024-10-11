@@ -1,3 +1,23 @@
+"""
+Aberth's Method for Polynomial Root Finding
+
+This code implements Aberth's method, which is an algorithm for finding the roots of polynomials. In simple terms, it's a way to solve equations like x^3 + 2x^2 - 5x + 3 = 0, finding the values of x that make the equation true.
+
+The main input for this code is a list of coefficients that represent a polynomial. For example, [1, 2, -5, 3] would represent the polynomial x^3 + 2x^2 - 5x + 3. The code also takes initial guesses for where the roots might be.
+
+The output is a list of complex numbers that represent the roots of the polynomial. These are the solutions to the equation. The code also returns the number of iterations it took to find the roots and whether it was successful in finding them within the specified tolerance.
+
+To achieve its purpose, the code uses an iterative process. It starts with initial guesses for the roots and then repeatedly improves these guesses until they're close enough to the actual roots. The main algorithm, Aberth's method, is implemented in the aberth function. This function uses a clever mathematical formula to update each guess based on the current polynomial value and its derivative at that point, as well as the positions of all the other guesses.
+
+The code includes several variations of the algorithm. There's a basic version (aberth), a multithreaded version for faster computation (aberth_mt), and versions that use autocorrelation (aberth_autocorr and aberth_autocorr_mt). These autocorrelation versions are designed to work better for certain types of polynomials.
+
+An important part of the process is finding good initial guesses for the roots. The code includes several functions for this, like initial_aberth and initial_aberth_autocorr. These functions use mathematical insights about where roots are likely to be located to make educated guesses.
+
+The code also includes helper functions like horner_eval and horner_backward which are efficient ways to evaluate polynomials and their derivatives.
+
+Overall, this code provides a comprehensive toolkit for finding the roots of polynomials using Aberth's method, with various optimizations and variations to handle different scenarios efficiently.
+"""
+
 from concurrent.futures import ThreadPoolExecutor
 from math import cos, sin, pi
 from typing import List, Tuple
