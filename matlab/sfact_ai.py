@@ -6,15 +6,15 @@ from typing import List
 def leja(points: List[complex]) -> List[complex]:
     """
     Compute the Leja ordering of a set of complex points.
-    
+
     The Leja ordering is a sequence of points that maximizes the minimum distance between consecutive points. This ordering is useful for numerical stability in polynomial interpolation and approximation.
-    
+
     Args:
         points (List[complex]): A non-empty list of complex points.
-    
+
     Returns:
         List[complex]: The Leja ordered list of points.
-    
+
     Raises:
         ValueError: If the input list of points is empty.
     """
@@ -46,10 +46,10 @@ def leja(points: List[complex]) -> List[complex]:
 def seprts(p: List[float]) -> np.ndarray:
     """
     Separate the roots of a polynomial into those inside the unit circle, on the unit circle, and outside the unit circle.
-    
+
     Args:
         p (List[float]): The coefficients of the polynomial.
-    
+
     Returns:
         np.ndarray: The roots of the polynomial, with those on the unit circle sorted by angle.
     """
@@ -76,10 +76,10 @@ def seprts(p: List[float]) -> np.ndarray:
 def sfact(p: List[float]):
     """
     Compute the spectral factorization of a polynomial.
-    
+
     Args:
         p (List[float]): The coefficients of the polynomial.
-    
+
     Returns:
         Tuple[np.ndarray, List[float]]:
             - The coefficients of the spectral factor.
