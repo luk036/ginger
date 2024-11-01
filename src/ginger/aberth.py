@@ -83,6 +83,7 @@ def initial_aberth(coeffs: List[float]) -> List[complex]:
     c_gen = Circle(2)
     return [
         center + radius * complex(x, y) for y, x in (c_gen.pop() for _ in range(degree))
+        # Note: ----------------------------^
     ]
 
 
@@ -113,32 +114,29 @@ def initial_aberth_orig(coeffs: List[float]) -> List[complex]:
     ]
 
 
-def aberth_job(
-    coeffs: List[float],
-    i: int,
-    zsc: List[complex],
-) -> Tuple[float, int, complex]:
-    zi = zsc[i]
-    p_eval, coeffs1 = horner_eval(coeffs, zi)
-    tol_i = abs(p_eval)
-    p1_eval, _ = horner_eval(coeffs1[:-1], zi)
-    for j, zj in enumerate(zsc):
-        if i != j:
-            p1_eval -= p_eval / (zi - zj)
-    zi -= p_eval / p1_eval
-    return tol_i, i, zi
-
-
 def aberth_mt(
     coeffs: List[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
+    def aberth_job(
+        i: int,
+    ) -> Tuple[float, int, complex]:
+        zi = zs[i]
+        p_eval, coeffs1 = horner_eval(coeffs, zi)
+        tol_i = abs(p_eval)
+        p1_eval, _ = horner_eval(coeffs1[:-1], zi)
+        for j, zj in enumerate(zs):
+            if i != j:
+                p1_eval -= p_eval / (zi - zj)
+        zi -= p_eval / p1_eval
+        return tol_i, i, zi
+
     with ThreadPoolExecutor() as executor:
         for niter in range(options.max_iters):
             tolerance = 0.0
             futures = []
 
             for i in range(len(zs)):
-                futures.append(executor.submit(aberth_job, coeffs, i, zs))
+                futures.append(executor.submit(aberth_job, i))
 
             for future in futures:
                 tol_i, i, zi = future.result()
