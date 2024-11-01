@@ -82,8 +82,9 @@ def initial_aberth(coeffs: List[float]) -> List[complex]:
     # radius: float = pow(abs(poly_c), 1.0 / degree)
     c_gen = Circle(2)
     return [
-        center + radius * complex(x, y) for y, x in (c_gen.pop() for _ in range(degree))
-        # Note: ----------------------------^
+        center + radius * complex(x, y)
+        for y, x in (c_gen.pop() for _ in range(degree))
+        #    ^------ Note!
     ]
 
 
