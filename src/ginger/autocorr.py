@@ -10,33 +10,33 @@ from .vector2 import Vector2
 PI = pi
 
 
-def initial_autocorr_new(coeffs: List[float]) -> List[Vector2]:
-    """
-    The function `initial_autocorr_new` calculates the initial autocorrelation values for a given set of
-    coefficients.
+# def initial_autocorr_new(coeffs: List[float]) -> List[Vector2]:
+#     """
+#     The function `initial_autocorr_new` calculates the initial autocorrelation values for a given set of
+#     coefficients.
 
-    :param coeffs: The `coeffs` parameter is a list of coefficients of a polynomial. Each
-                   element in the list represents the coefficient of a term in the polynomial, starting
-                   from the highest degree term down to the constant term. For example, if the polynomial
-                   is `3x^3 - 2x^2 + 5x - 1`, then `coeffs` would be `[3, -2, 5, -1]`
-    :type coeffs: List[float]
-    :return: The function `initial_autocorr_new` returns a list of `Vector2` objects.
+#     :param coeffs: The `coeffs` parameter is a list of coefficients of a polynomial. Each
+#                    element in the list represents the coefficient of a term in the polynomial, starting
+#                    from the highest degree term down to the constant term. For example, if the polynomial
+#                    is `3x^3 - 2x^2 + 5x - 1`, then `coeffs` would be `[3, -2, 5, -1]`
+#     :type coeffs: List[float]
+#     :return: The function `initial_autocorr_new` returns a list of `Vector2` objects.
 
-    Examples:
-        >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
-        >>> vr0s = initial_autocorr(h)
-    """
-    degree = len(coeffs) - 1
-    radius = pow(abs(coeffs[-1]), 1.0 / degree)
-    if radius > 1:
-        radius = 1 / radius
-    degree //= 2
-    # k = PI / degree
-    m = radius * radius
-    # vr0s = [Vector2(2 * radius * cos(k * i), -m) for i in range(1, degree, 2)]
-    vgen = VdCorput(2)
-    vgen.reseed(1)
-    return [Vector2(2 * radius * cos(PI * vgen.pop()), -m) for _ in range(1, degree, 2)]
+#     Examples:
+#         >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
+#         >>> vr0s = initial_autocorr(h)
+#     """
+#     degree = len(coeffs) - 1
+#     radius = pow(abs(coeffs[-1]), 1.0 / degree)
+#     if radius > 1:
+#         radius = 1 / radius
+#     degree //= 2
+#     # k = PI / degree
+#     m = radius * radius
+#     # vr0s = [Vector2(2 * radius * cos(k * i), -m) for i in range(1, degree, 2)]
+#     vgen = VdCorput(2)
+#     vgen.reseed(1)
+#     return [Vector2(2 * radius * cos(PI * vgen.pop()), -m) for _ in range(1, degree, 2)]
 
 
 def initial_autocorr(coeffs: List[float]) -> List[Vector2]:

@@ -44,41 +44,41 @@ class Vector2:
         """
         return self._x * rhs._x + self._y * rhs._y
 
-    def __iadd__(self, rhs):
-        """
-        The `__iadd__` method adds the x and y components of the right-hand side vector to the x and y
-        components of the left-hand side vector and returns the modified left-hand side vector.
+    # def __iadd__(self, rhs):
+    #     """
+    #     The `__iadd__` method adds the x and y components of the right-hand side vector to the x and y
+    #     components of the left-hand side vector and returns the modified left-hand side vector.
 
-        :param rhs: The parameter `rhs` stands for "right-hand side" and represents the object that is being added to the current object. In this case, it is assumed that `rhs` is an instance of the `Vector2` class, which has attributes `x` and `y`.
-        :return: The `__iadd__` method returns `self`, which is the updated instance of the `Vector2` class.
+    #     :param rhs: The parameter `rhs` stands for "right-hand side" and represents the object that is being added to the current object. In this case, it is assumed that `rhs` is an instance of the `Vector2` class, which has attributes `x` and `y`.
+    #     :return: The `__iadd__` method returns `self`, which is the updated instance of the `Vector2` class.
 
-        Examples:
-            >>> v1 = Vector2(1, 2)
-            >>> v2 = Vector2(3, 4)
-            >>> v1 += v2
-            >>> print(v1)
-            <4, 6>
-        """
-        self._x += rhs.x
-        self._y += rhs.y
-        return self
+    #     Examples:
+    #         >>> v1 = Vector2(1, 2)
+    #         >>> v2 = Vector2(3, 4)
+    #         >>> v1 += v2
+    #         >>> print(v1)
+    #         <4, 6>
+    #     """
+    #     self._x += rhs.x
+    #     self._y += rhs.y
+    #     return self
 
-    def __add__(self, rhs):
-        """
-        The function overloads the "+" operator for the Vector2 class to perform vector addition.
+    # def __add__(self, rhs):
+    #     """
+    #     The function overloads the "+" operator for the Vector2 class to perform vector addition.
 
-        :param rhs: The parameter `rhs` stands for "right-hand side" and represents the vector that is being added to the current vector (`self`)
-        :return: The `__add__` method returns a new `Vector2` object that is the result of adding the `x` and `y` components of the current object (`self`) with the `x` and `y` components of the `rhs` object.
+    #     :param rhs: The parameter `rhs` stands for "right-hand side" and represents the vector that is being added to the current vector (`self`)
+    #     :return: The `__add__` method returns a new `Vector2` object that is the result of adding the `x` and `y` components of the current object (`self`) with the `x` and `y` components of the `rhs` object.
 
-        Examples:
-            >>> v1 = Vector2(1, 2)
-            >>> v2 = Vector2(3, 4)
-            >>> print(v1 + v2)
-            <4, 6>
-            >>> print(v1)
-            <1, 2>
-        """
-        return Vector2(self.x + rhs.x, self.y + rhs.y)
+    #     Examples:
+    #         >>> v1 = Vector2(1, 2)
+    #         >>> v2 = Vector2(3, 4)
+    #         >>> print(v1 + v2)
+    #         <4, 6>
+    #         >>> print(v1)
+    #         <1, 2>
+    #     """
+    #     return Vector2(self.x + rhs.x, self.y + rhs.y)
 
     def __isub__(self, rhs):
         """
@@ -156,48 +156,6 @@ class Vector2:
             <1, 2>
         """
         return Vector2(self.x * alpha, self.y * alpha)
-
-    def __itruediv__(self, alpha: float):
-        """
-        The `__itruediv__` function divides the x and y components of a Vector2 object by a scalar
-        value.
-
-        :param alpha: The parameter `alpha` is a scalar value that is used to divide the `x` and `y` components of the vector. It is used to scale down the vector by dividing each component by `alpha`
-        :type alpha: float
-        :return: The method returns the updated instance of the Vector2 object after performing the division operation.
-
-        Examples:
-            >>> v1 = Vector2(1, 2)
-            >>> v1 /= 2
-            >>> print(v1)
-            <0.5, 1.0>
-            >>> print(v1)
-            <0.5, 1.0>
-            >>> v1 /= 0
-            Traceback (most recent call last):
-                ...
-            ZeroDivisionError: float division by zero
-            >>> print(v1)
-            <0.5, 1.0>
-            >>> print(v1)
-            <0.5, 1.0>
-            >>> v1 /= 1
-            >>> print(v1)
-            <0.5, 1.0>
-            >>> print(v1)
-            <0.5, 1.0>
-            >>> v1 /= 2
-            >>> print(v1)
-            <0.25, 0.5>
-            >>> print(v1)
-            <0.25, 0.5>
-            >>> v1 /= 2
-            >>> print(v1)
-            <0.125, 0.25>
-        """
-        self._x /= alpha
-        self._y /= alpha
-        return self
 
     def __truediv__(self, alpha: float):
         """

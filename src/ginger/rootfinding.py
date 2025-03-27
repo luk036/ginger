@@ -265,33 +265,33 @@ def horner_eval(coeffs: List, zval) -> Tuple[Any, List]:
     #    coeffs[i + 1] += coeffs[i] * zval
 
 
-def horner_backward(coeffs: List, degree: int, val):
-    """Polynomial evaluation using Horner's scheme
+# def horner_backward(coeffs: List, degree: int, val):
+#     """Polynomial evaluation using Horner's scheme
 
-    The `horner_backward` function evaluates a polynomial using Horner's scheme and updates the coefficients
-    list in place.
+#     The `horner_backward` function evaluates a polynomial using Horner's scheme and updates the coefficients
+#     list in place.
 
-    :param coeffs: A list of coefficients of a polynomial.
-    :type coeffs: List
-    :param degree: The degree parameter represents the degree of the polynomial. It is an integer value that indicates the highest power of the variable in the polynomial
-    :type degree: int
-    :param zval: The `zval` parameter represents the value at which the polynomial is to be evaluated. It can be a float or a complex number
-    :return: the value of the polynomial evaluated at the given value `zval`.
+#     :param coeffs: A list of coefficients of a polynomial.
+#     :type coeffs: List
+#     :param degree: The degree parameter represents the degree of the polynomial. It is an integer value that indicates the highest power of the variable in the polynomial
+#     :type degree: int
+#     :param zval: The `zval` parameter represents the value at which the polynomial is to be evaluated. It can be a float or a complex number
+#     :return: the value of the polynomial evaluated at the given value `zval`.
 
-    Examples:
-        >>> coeffs = [1.0, -6.7980, 2.9948, -0.043686, 0.000089248]
-        >>> degree = len(coeffs) - 1
-        >>> alpha = 6.3256
-        >>> p_eval = horner_backward(coeffs, 4, alpha)
-        >>> -p_eval * pow(alpha, 5)
-        -0.013355264987140483
-        >>> coeffs[3]
-        0.006920331351966613
-    """
-    for i in range(2, degree + 2):
-        coeffs[-i] -= coeffs[-(i - 1)]
-        coeffs[-i] /= -val
-    return coeffs[-(degree + 1)]
+#     Examples:
+#         >>> coeffs = [1.0, -6.7980, 2.9948, -0.043686, 0.000089248]
+#         >>> degree = len(coeffs) - 1
+#         >>> alpha = 6.3256
+#         >>> p_eval = horner_backward(coeffs, 4, alpha)
+#         >>> -p_eval * pow(alpha, 5)
+#         -0.013355264987140483
+#         >>> coeffs[3]
+#         0.006920331351966613
+#     """
+#     for i in range(2, degree + 2):
+#         coeffs[-i] -= coeffs[-(i - 1)]
+#         coeffs[-i] /= -val
+#     return coeffs[-(degree + 1)]
 
 
 #
@@ -330,38 +330,31 @@ def horner(coeffs: List[float], degree: int, vr: Vector2) -> Vector2:
     return Vector2(coeffs[degree - 1], coeffs[degree])
 
 
-def initial_guess_orig(coeffs: List[float]) -> List[Vector2]:
-    """Initial guess
+# def initial_guess_orig(coeffs: List[float]) -> List[Vector2]:
+#     """Initial guess
 
-    The `initial_guess` function calculates an initial guess for the roots of a polynomial equation using a specific algorithm.
+#     The `initial_guess` function calculates an initial guess for the roots of a polynomial equation using a specific algorithm.
 
-    :param coeffs: The `coeffs` parameter is a list of floating-point numbers representing the coefficients of a polynomial.
-                   The polynomial is of the form `coeffs[0] * x^n + coeffs[1] * x^(n-1) + ... + coeffs[n-1] * x + coeffs[n]`
-    :type coeffs: List[float]
-    :return: The function `initial_guess` returns a list of `Vector2` objects.
+#     :param coeffs: The `coeffs` parameter is a list of floating-point numbers representing the coefficients of a polynomial.
+#                    The polynomial is of the form `coeffs[0] * x^n + coeffs[1] * x^(n-1) + ... + coeffs[n-1] * x + coeffs[n]`
+#     :type coeffs: List[float]
+#     :return: The function `initial_guess` returns a list of `Vector2` objects.
 
-    Examples:
-        >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
-        >>> vr0s = initial_guess_orig(h)
-    """
-    degree = len(coeffs) - 1
-    center = -coeffs[1] / (degree * coeffs[0])
-    # p_eval = np.poly1d(coeffs)
-    poly_c = horner_eval_f(coeffs, center)
-    radius = pow(abs(poly_c), 1 / degree)
-    m = center * center + radius * radius
-    degree //= 2
-    degree *= 2  # make even
-    k = PI / degree
-    temp = iter(radius * cos(k * i) for i in range(1, degree, 2))
-    return [Vector2(2 * (center + t), -(m + 2 * center * t)) for t in temp]
-    # vr0s = []
-    # for i in range(1, degree, 2):
-    #     temp = radius * cos(k * i)
-    #     r0 = 2 * (center + temp)
-    #     t0 = m + 2 * center * temp  # ???
-    #     vr0s += [Vector2(r0, -t0)]
-    # return vr0s
+#     Examples:
+#         >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
+#         >>> vr0s = initial_guess_orig(h)
+#     """
+#     degree = len(coeffs) - 1
+#     center = -coeffs[1] / (degree * coeffs[0])
+#     # p_eval = np.poly1d(coeffs)
+#     poly_c = horner_eval_f(coeffs, center)
+#     radius = pow(abs(poly_c), 1 / degree)
+#     m = center * center + radius * radius
+#     degree //= 2
+#     degree *= 2  # make even
+#     k = PI / degree
+#     temp = iter(radius * cos(k * i) for i in range(1, degree, 2))
+#     return [Vector2(2 * (center + t), -(m + 2 * center * t)) for t in temp]
 
 
 def initial_guess(coeffs: List[float]) -> List[Vector2]:
