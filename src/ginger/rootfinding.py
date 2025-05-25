@@ -1,5 +1,5 @@
 """
-Rootfinding.py
+rootfinding.py
 
 This code is a collection of functions and classes designed to find the roots of polynomial equations. In mathematics, finding the roots of a polynomial means determining the values of x that make the polynomial equal to zero. This is a common problem in various fields like engineering, physics, and computer science.
 
@@ -50,6 +50,16 @@ PI = pi
 # The class "Options" defines default values for maximum iterations, tolerance, and individual
 # tolerance.
 class Options:
+    """
+    Configuration options for root-finding algorithms.
+    
+    This class provides control parameters for iterative root-finding methods:
+    - max_iters: Maximum number of iterations allowed (default: 2000)
+    - tolerance: Convergence tolerance for the algorithm (default: 1e-12)
+    - tol_ind: Individual root tolerance threshold (default: 1e-15)
+    
+    These parameters allow fine-tuning of the algorithm's behavior and stopping criteria.
+    """
     max_iters: int = 2000
     tolerance: float = 1e-12
     tol_ind: float = 1e-15
@@ -61,17 +71,20 @@ class Options:
 #    ⎜               ⎟   ⋅ ⎜ ⎟
 #    ⎝q ⋅ p         s⎠     ⎝B⎠
 def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
-    """for -vA1
+    """Calculate adjustment vector for Bairstow's method.
 
-    The `delta` function calculates the delta value using the given vectors `vA`, `vr`, and `vp`.
+    The `delta` function computes the correction vector used in Bairstow's method to update
+    root estimates. It solves a 2x2 linear system derived from polynomial division to find
+    the optimal adjustment to current root estimates.
 
-    :param vA: The parameter `vA` represents a 2D vector
+    :param vA: Residual vector (A,B) from polynomial division
     :type vA: Vector2
-    :param vr: The parameter `vr` represents a 2D vector with components `r` and `q`
+    :param vr: Current root estimate vector (r,q)
     :type vr: Vector2
-    :param vp: vp is a Vector2 representing the vector p
+    :param vp: Vector used in suppression calculations (p,s)
     :type vp: Vector2
-    :return: The function `delta` returns a `Vector2` object.
+    :return: Correction vector to adjust root estimates
+    :rtype: Vector2
 
     Examples:
         >>> d = delta(Vector2(1, 2), Vector2(-2, 0), Vector2(4, 5))
@@ -85,20 +98,23 @@ def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
 
 
 def suppress_old(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
-    """Zero suppresion (original)
+    """Original implementation of zero suppression in Bairstow's method.
 
-    The `suppress` function performs zero suppression on a given set of vectors using the Bairsow's
-    method.
+    This function modifies the residual vectors vA and vA1 to suppress the influence
+    of other roots (vrj) when estimating the current root (vri). This helps prevent
+    interference between root estimates during iteration.
 
-    :param vA: The parameter `vA` represents a 2D vector. It is not clear what this vector represents without further context
+    Note: This is the original implementation that modifies vectors in-place.
+    The newer version returns modified vectors instead.
+
+    :param vA: Current residual vector (A,B)
     :type vA: Vector2
-    :param vA1: The parameter `vA1` represents a 2D vector
+    :param vA1: First derivative residual vector (A1,B1)
     :type vA1: Vector2
-    :param vri: The parameter `vri` represents a vector with components `x` and `y`
+    :param vri: Current root estimate being refined (ri,qi)
     :type vri: Vector2
-    :param vrj: The parameter `vrj` represents a vector `vrj` in the function `suppress()`. It is a `Vector2` object that represents the vector `vrj` in a mathematical context
+    :param vrj: Another root estimate that might interfere (rj,qj)
     :type vrj: Vector2
-    :return: The function `suppress` returns two values: `va` and `va1`.
 
     Reference:
         D. C. Handscomb, Computation of the latent roots of a Hessenberg matrix
@@ -134,20 +150,22 @@ def suppress_old(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
 
 
 def suppress(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
-    """Zero suppresion
+    """Improved zero suppression for Bairstow's method.
 
-    The `suppress` function performs zero suppression on a given set of vectors using the Bairsow's
-    method.
+    This function calculates modified residual vectors that account for interference
+    from other roots in the system. It uses matrix operations to efficiently compute
+    the suppression terms, providing better numerical stability than the original version.
 
-    :param vA: The parameter `vA` represents a 2D vector. It is not clear what this vector represents without further context
+    :param vA: Current residual vector (A,B)
     :type vA: Vector2
-    :param vA1: The parameter `vA1` represents a 2D vector
+    :param vA1: First derivative residual vector (A1,B1)
     :type vA1: Vector2
-    :param vri: The parameter `vri` represents a vector with components `x` and `y`
+    :param vri: Current root estimate being refined (ri,qi)
     :type vri: Vector2
-    :param vrj: The parameter `vrj` represents a vector `vrj` in the function `suppress()`. It is a `Vector2` object that represents the vector `vrj` in a mathematical context
+    :param vrj: Another root estimate that might interfere (rj,qj)
     :type vrj: Vector2
-    :return: The function `suppress` returns two values: `va` and `va1`.
+    :return: Tuple of modified residual vectors (vA, vA1)
+    :rtype: Tuple[Vector2, Vector2]
 
     Reference:
         D. C. Handscomb, Computation of the latent roots of a Hessenberg matrix
@@ -177,20 +195,21 @@ def suppress(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
 
 
 def suppress2(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
-    """Zero suppresion
+    """Alternative zero suppression implementation for Bairstow's method.
 
-    The `suppress` function performs zero suppression on a given set of vectors using the Bairsow's
-    method.
+    This version uses a different approach to compute the suppression terms,
+    potentially offering better performance or numerical properties in some cases.
 
-    :param vA: The parameter `vA` represents a 2D vector. It is not clear what this vector represents without further context
+    :param vA: Current residual vector (A,B)
     :type vA: Vector2
-    :param vA1: The parameter `vA1` represents a 2D vector
+    :param vA1: First derivative residual vector (A1,B1)
     :type vA1: Vector2
-    :param vri: The parameter `vri` represents a vector with components `x` and `y`
+    :param vri: Current root estimate being refined (ri,qi)
     :type vri: Vector2
-    :param vrj: The parameter `vrj` represents a vector `vrj` in the function `suppress()`. It is a `Vector2` object that represents the vector `vrj` in a mathematical context
+    :param vrj: Another root estimate that might interfere (rj,qj)
     :type vrj: Vector2
-    :return: The function `suppress` returns two values: `va` and `va1`.
+    :return: Tuple of modified residual vectors (vA, vA1)
+    :rtype: Tuple[Vector2, Vector2]
 
     Reference:
         D. C. Handscomb, Computation of the latent roots of a Hessenberg matrix
@@ -218,14 +237,17 @@ def suppress2(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
 
 
 def horner_eval_f(coeffs: List, zval):
-    """Polynomial evaluation using Horner's scheme
+    """Evaluate polynomial using Horner's method (functional version).
 
-    The `horner_eval_f` function evaluates a polynomial using Horner's scheme.
+    This function computes the value of a polynomial at a given point using
+    Horner's method, which is more efficient than direct evaluation. It uses
+    Python's reduce function for a concise implementation.
 
-    :param coeffs: A list of coefficients of a polynomial.
+    :param coeffs: List of polynomial coefficients in descending order of degree
     :type coeffs: List
-    :param zval: The `zval` parameter represents the value at which the polynomial is to be evaluated. It can be a float or a complex number
-    :return: the value of the polynomial evaluated at the given value `zval`.
+    :param zval: Point at which to evaluate the polynomial (can be complex)
+    :return: Value of the polynomial at zval
+    :rtype: Same type as zval (float or complex)
 
     Examples:
         >>> coeffs = [1, -8, -72, 382, 727, -2310]
@@ -242,15 +264,19 @@ def horner_eval_f(coeffs: List, zval):
 #        P(z) = P (z) ⋅ ⎛z - z   ⎞ + A
 #                1      ⎝     val⎠
 def horner_eval(coeffs: List, zval) -> Tuple[Any, List]:
-    """Polynomial evaluation using Horner's scheme
+    """Evaluate polynomial and return intermediate coefficients.
 
-    The `horner_eval` function evaluates a polynomial using Horner's scheme and updates the coefficients
-    list in place.
+    This function uses Horner's method to evaluate a polynomial and also returns
+    the intermediate coefficients that result from the synthetic division process.
+    These coefficients can be used for further computations like derivatives.
 
-    :param coeffs: A list of coefficients of a polynomial.
+    :param coeffs: List of polynomial coefficients in descending order of degree
     :type coeffs: List
-    :param zval: The `zval` parameter represents the value at which the polynomial is to be evaluated. It can be a float or a complex number
-    :return: the value of the polynomial evaluated at the given value `zval`.
+    :param zval: Point at which to evaluate the polynomial (can be complex)
+    :return: Tuple containing:
+             - Value of polynomial at zval
+             - List of intermediate coefficients from synthetic division
+    :rtype: Tuple[Any, List]
 
     Examples:
         >>> coeffs = [1, -8, -72, 382, 727, -2310]
@@ -301,18 +327,20 @@ def horner_eval(coeffs: List, zval) -> Tuple[Any, List]:
 #
 #    Note: P(x) becomes the quotient after calling this function
 def horner(coeffs: List[float], degree: int, vr: Vector2) -> Vector2:
-    """Polynomial evaluation using Horner's scheme
+    """Evaluate quadratic polynomial factor and return remainder.
 
-    The `horner` function evaluates a polynomial using Horner's scheme and returns the result as a
-    `Vector2` object.
+    This specialized version of Horner's method evaluates a polynomial divided by
+    a quadratic factor (x² - r·x - q). It returns the linear remainder (A·x + B)
+    and modifies the coefficients array to contain the quotient polynomial.
 
-    :param coeffs: The `coeffs` parameter is a list of coefficients of a polynomial. Each element in the list represents the coefficient of a term in the polynomial, starting from the highest degree term and going down to the constant term
+    :param coeffs: List of polynomial coefficients in descending order
     :type coeffs: List[float]
-    :param degree: The degree parameter represents the degree of the polynomial. It determines the number of coefficients in the coeffs list
+    :param degree: Degree of the polynomial (must be ≥ 2)
     :type degree: int
-    :param vr: vr is a Vector2 object that represents the values of x and y in the polynomial expression
+    :param vr: Vector representing quadratic factor coefficients (r,q)
     :type vr: Vector2
-    :return: The function `horner` returns a `Vector2` object.
+    :return: Remainder vector (A,B)
+    :rtype: Vector2
 
     Examples:
         >>> coeffs = [1, -8, -72, 382, 727, -2310]
@@ -358,14 +386,16 @@ def horner(coeffs: List[float], degree: int, vr: Vector2) -> Vector2:
 
 
 def initial_guess(coeffs: List[float]) -> List[Vector2]:
-    """Initial guess
+    """Generate initial root estimates for Bairstow's method.
 
-    The `initial_guess` function calculates an initial guess for the roots of a polynomial equation using a specific algorithm.
+    This function creates reasonable starting points for the root-finding algorithm
+    by distributing estimates around a circle in the complex plane. The circle's
+    center and radius are determined from the polynomial's coefficients.
 
-    :param coeffs: The `coeffs` parameter is a list of floating-point numbers representing the coefficients of a polynomial.
-                   The polynomial is of the form `coeffs[0] * x^n + coeffs[1] * x^(n-1) + ... + coeffs[n-1] * x + coeffs[n]`
+    :param coeffs: List of polynomial coefficients in descending order
     :type coeffs: List[float]
-    :return: The function `initial_guess` returns a list of `Vector2` objects.
+    :return: List of initial root estimates as Vector2 objects (r,q pairs)
+    :rtype: List[Vector2]
 
     Examples:
         >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
@@ -419,21 +449,23 @@ def initial_guess(coeffs: List[float]) -> List[Vector2]:
 def pbairstow_even(
     coeffs: List[float], vrs: List[Vector2], options=Options()
 ) -> Tuple[List[Vector2], int, bool]:
-    """Parallel Bairstow's method
+    """Parallel implementation of Bairstow's root-finding method.
 
-    The `pbairstow_even` function implements a parallel version of Bairstow's method for finding the
-    roots of a polynomial.
+    This function implements a parallel version of Bairstow's method for finding
+    all roots of a polynomial simultaneously. It works by iteratively improving
+    estimates of quadratic factors of the polynomial.
 
-    :param coeffs: The parameter `coeffs` is a list of floats representing the coefficients of a
-                   polynomial. It represents the polynomial whose roots we want to find using Bairstow's method
+    :param coeffs: List of polynomial coefficients in descending order
     :type coeffs: List[float]
-    :param vrs: The `vrs` parameter is a list of `Vector2` objects. Each `Vector2` object represents
-                a complex number and is used as an initial guess for the roots of the polynomial equation. The
-                length of the `vrs` list determines the number of roots to be found
+    :param vrs: Initial estimates for quadratic factors (as Vector2 pairs)
     :type vrs: List[Vector2]
-    :param options: The `options` parameter is an instance of the `Options` class, which is used to
-                    specify various options for the Bairstow's method algorithm.
-    :return: The function `pbairstow_even` returns a tuple containing the following elements:
+    :param options: Configuration parameters for the algorithm
+    :type options: Options
+    :return: Tuple containing:
+             - Final root estimates
+             - Number of iterations performed
+             - Convergence status (True if converged)
+    :rtype: Tuple[List[Vector2], int, bool]
 
     Examples:
         >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
@@ -468,20 +500,16 @@ def pbairstow_even(
 
 
 def find_rootq(vr: Vector2) -> Tuple[Num, Num]:
-    """find_rootq
+    """Solve quadratic equation x² - r·x - q = 0.
 
-    The function `find_rootq` solves a quadratic equation of the form x^2 - r*x - q = 0 and returns the
-    two roots as a tuple.
+    This function finds the roots of a quadratic equation represented by
+    the Vector2 vr, where vr.x is r and vr.y is q in the equation above.
+    It handles both real and complex roots appropriately.
 
-        (x - x1)(x - x2) = x^2 - (x1 + x2) x + x1 * x2
-
-    :param vr: The parameter `vr` is a Vector2 object that represents the coefficients of a quadratic
-               equation. The `x` component of `vr` represents the coefficient of the linear term (`r`), and
-               the `y` component represents the constant term (`q`) in the equation `x^2 - r*x - q = 0.`
+    :param vr: Vector containing quadratic coefficients (r,q)
     :type vr: Vector2
-    :return: The function `find_rootq` returns a tuple containing the two roots of the quadratic
-             equation x^2 - r*x - q = 0. The roots can be either floats or complex numbers, depending on the
-             values of the input parameters.
+    :return: Tuple containing the two roots (real or complex)
+    :rtype: Tuple[Num, Num]
 
     Examples:
         >>> vr = find_rootq(Vector2(5, -6))
