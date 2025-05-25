@@ -12,14 +12,6 @@ ginger.aberth module
    :undoc-members:
    :show-inheritance:
 
-ginger.aberth\_ai module
-------------------------
-
-.. automodule:: ginger.aberth_ai
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 ginger.autocorr module
 ----------------------
 

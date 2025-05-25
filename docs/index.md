@@ -1,6 +1,6 @@
 # ginger
 
-Circuit Partitioning Python Code
+Polynomial Root Finding Python Code
 
 ## 👉 Note
 
