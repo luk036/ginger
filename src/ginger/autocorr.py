@@ -41,12 +41,12 @@ PI = pi  # Alias math.pi for cleaner usage
 def initial_autocorr(coeffs: List[float]) -> List[Vector2]:
     """
     Calculates initial guesses for autocorrelation roots using coefficient analysis.
-    
+
     The method:
     1. Computes a root radius estimate from the constant term
     2. Adjusts radius to focus on roots outside unit circle
     3. Generates initial guesses using cosine spaced angles with quadratic terms
-    
+
     :param coeffs: Polynomial coefficients from highest to lowest degree
     :return: List of Vector2 representing quadratic factors (x² - rx - q)
     """
@@ -67,13 +67,13 @@ def pbairstow_autocorr(
 ):
     """
     Implements Bairstow's method for polynomial root finding with autocorrelation.
-    
+
     Process outline:
     1. Iterates until convergence or max iterations
     2. Evaluates polynomial and first derivative using Horner's scheme
     3. Suppresses interference from other roots
     4. Updates estimates using Newton-Raphson step
-    
+
     :param coeffs: Polynomial coefficients (degree must be even)
     :param vrs: Initial guesses for quadratic factors
     :param options: Algorithm control parameters
@@ -89,21 +89,21 @@ def pbairstow_autocorr(
         for i, (vri, ci) in enumerate(zip(vrs, converged)):
             if ci:  # Skip already converged factors
                 continue
-                
+
             # Polynomial evaluation at current factor estimate
             coeffs1 = coeffs.copy()
             vA = horner(coeffs1, degree, vri)
-            
+
             # Check individual convergence
             tol_i = max(abs(vA.x), abs(vA.y))
             if tol_i < options.tol_ind:
                 converged[i] = True
                 continue
             tolerance = max(tolerance, tol_i)
-            
+
             # Evaluate reduced polynomial (degree-2)
             vA1 = horner(coeffs1, degree - 2, vri)
-            
+
             # Suppress influence of other factors
             for j in robin.exclude(i):
                 vrj = vrs[j]
@@ -111,33 +111,33 @@ def pbairstow_autocorr(
                 # Handle reciprocal roots
                 vrn = Vector2(-vrj.x, 1.0) / vrj.y
                 vA, vA1 = suppress(vA, vA1, vri, vrn)
-            
+
             # Apply Newton-Raphson update
             vrs[i] -= delta(vA, vri, vA1)
 
         # Check global convergence
         if tolerance < options.tolerance:
             return vrs, niter, True
-            
+
     return vrs, options.max_iters, False
 
 
 def extract_autocorr(vr: Vector2) -> Vector2:
     """
     Normalizes quadratic factors to ensure roots within unit circle.
-    
+
     Strategy:
     1. Calculate roots of quadratic x² - rx - q
     2. If roots are outside unit circle, take reciprocals
     3. Return new quadratic with roots inside unit circle
-    
+
     :param vr: Vector2 representing quadratic coefficients (r, q)
     :return: Normalized Vector2 with roots inside unit circle
     """
     r, q = vr.x, vr.y
     hr = r / 2.0  # Half-radius
     d = hr * hr + q  # Discriminant
-    
+
     if d < 0.0:  # Complex conjugate roots case
         if q < -1.0:  # Ensure magnitude using reciprocal
             vr = Vector2(-r, 1.0) / q
@@ -145,7 +145,7 @@ def extract_autocorr(vr: Vector2) -> Vector2:
         # Calculate roots using alternative quadratic formula
         a1 = hr + (sqrt(d) if hr >= 0.0 else -sqrt(d))
         a2 = -q / a1  # Second root from Vieta's formula
-        
+
         # Handle roots outside unit circle
         if abs(a1) > 1.0:
             a1 = 1.0 / a1
@@ -155,5 +155,5 @@ def extract_autocorr(vr: Vector2) -> Vector2:
         elif abs(a2) > 1.0:
             a2 = 1.0 / a2
             vr = Vector2(a1 + a2, -a1 * a2)
-    
+
     return vr

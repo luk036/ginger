@@ -37,7 +37,7 @@ def horner_backward(coeffs1: List, degree: int, alpha: complex) -> complex:
     Backward polynomial evaluation using Horner's method for root refinement.
     Evaluates polynomial at x=α using coefficients in reverse order.
     This implementation modifies coefficients in-place for efficiency.
-    
+
     The `horner_backward` function evaluates a polynomial using the Horner's method in backward form.
     This is particularly useful for root refinement in iterative methods like Aberth's.
     It works by transforming the polynomial coefficients to center them around α,
@@ -72,7 +72,7 @@ def initial_aberth(coeffs: List[float]) -> List[complex]:
     Generates initial root guesses using geometric distribution around a center point.
     Calculates center from polynomial coefficients and radius from evaluation at center.
     Uses low-discrepancy sequence (Circle generator) for even angular distribution.
-    
+
     The `initial_aberth` function calculates the initial guesses for the roots of a polynomial using the
     Aberth method. It computes a center point based on the polynomial coefficients and then
     distributes initial guesses evenly around a circle centered at this point. The radius
@@ -107,7 +107,7 @@ def initial_aberth_orig(coeffs: List[float]) -> List[complex]:
     Original implementation of initial guess generation using trigonometric distribution.
     Places roots equally spaced around a circle with calculated radius and center.
     Includes angular offset of 0.25 to avoid alignment with coordinate axes.
-    
+
     The function `initial_aberth_orig` calculates the initial approximations for the roots of a
     polynomial using the Aberth method. This version uses trigonometric functions to distribute
     the initial guesses evenly around a circle, with a small angular offset to prevent roots
@@ -142,7 +142,7 @@ def aberth_mt(
     Multithreaded implementation of Aberth's method.
     Uses ThreadPoolExecutor to parallelize root updates across available CPUs.
     Maintains convergence checking in main thread while parallelizing computations.
-    
+
     This function implements Aberth's method for finding polynomial roots using multiple threads.
     Each root update is performed in parallel, which can significantly speed up computation
     for high-degree polynomials. The function maintains the same mathematical operations as
@@ -156,6 +156,7 @@ def aberth_mt(
              - Number of iterations performed
              - Boolean indicating whether convergence was achieved
     """
+
     def aberth_job(
         i: int,
     ) -> Tuple[float, int, complex]:
@@ -213,7 +214,7 @@ def aberth(
     Core implementation of Aberth's root-finding algorithm.
     Iteratively improves root estimates using polynomial evaluations and derivative approximations.
     Convergence is achieved when all residuals fall below specified tolerance.
-    
+
     The `aberth` function implements Aberth's method for polynomial root-finding. It works by:
     1. Evaluating the polynomial and its derivative at each current root estimate
     2. Adjusting each estimate based on the ratio of polynomial value to derivative
@@ -267,7 +268,7 @@ def initial_aberth_autocorr(coeffs: List[float]) -> List[complex]:
     Generates initial guesses for autocorrelation polynomials.
     Special case handling for polynomials with reciprocal root pairs.
     Adjusts radius to ensure roots stay within unit circle when possible.
-    
+
     The function `initial_aberth_autocorr` calculates the initial values for the Aberth method for
     finding the roots of a polynomial. This version is specialized for autocorrelation polynomials,
     which have symmetric root structures (roots come in reciprocal conjugate pairs). It ensures
@@ -303,7 +304,7 @@ def initial_aberth_autocorr_orig(coeffs: List[float]) -> List[complex]:
     Original trigonometric implementation for autocorrelation polynomials.
     Generates initial guesses on a circle with angular spacing considering reciprocal roots.
     Particularly suited for polynomials with symmetric root structures.
-    
+
     The function `initial_aberth_autocorr_orig` calculates the initial guesses for the roots of a
     polynomial using the Aberth method. This version uses trigonometric functions to distribute
     the initial guesses and is specialized for autocorrelation polynomials, which have symmetric
@@ -341,7 +342,7 @@ def aberth_autocorr(
     Aberth's method variant for autocorrelation polynomials.
     Accounts for reciprocal root pairs (z and 1/z̄) in derivative calculation.
     Particularly useful for polynomials with symmetric coefficient structures.
-    
+
     The `aberth_autocorr` function implements the Aberth method for finding the roots of a polynomial
     using autocorrelation. This version is specialized for polynomials where roots come in
     reciprocal conjugate pairs (common in signal processing applications). It modifies the
@@ -397,7 +398,7 @@ def aberth_autocorr_job(
     Worker function for multithreaded autocorrelation Aberth method.
     Handles individual root updates while considering reciprocal root pairs.
     Returns updated root estimate along with its residual for convergence checking.
-    
+
     This function performs the core calculations for a single root in the multithreaded
     autocorrelation version of Aberth's method. It evaluates the polynomial and its
     derivative at the current root estimate, applies corrections for all other roots
@@ -430,7 +431,7 @@ def aberth_autocorr_mt(
     Multithreaded version of autocorrelation Aberth's method.
     Parallelizes root updates across multiple threads for improved performance.
     Maintains thread safety by keeping root updates in separate jobs.
-    
+
     This function implements the autocorrelation version of Aberth's method using multiple
     threads. Each root update is performed in parallel, which can significantly speed up
     computation for high-degree polynomials. The function maintains the same mathematical
@@ -463,6 +464,7 @@ def aberth_autocorr_mt(
                 return zs, niter, True
 
     return zs, options.max_iters, False
+
 
 # def test_aberth():
 #     h = [5.0, 2.0, 9.0, 6.0, 2.0]

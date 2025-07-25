@@ -52,14 +52,15 @@ PI = pi
 class Options:
     """
     Configuration options for root-finding algorithms.
-    
+
     This class provides control parameters for iterative root-finding methods:
     - max_iters: Maximum number of iterations allowed (default: 2000)
     - tolerance: Convergence tolerance for the algorithm (default: 1e-12)
     - tol_ind: Individual root tolerance threshold (default: 1e-15)
-    
+
     These parameters allow fine-tuning of the algorithm's behavior and stopping criteria.
     """
+
     max_iters: int = 2000
     tolerance: float = 1e-12
     tol_ind: float = 1e-15
