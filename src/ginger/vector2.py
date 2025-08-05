@@ -267,7 +267,7 @@ class Vector2:
         :return: A string representation that can recreate the object
         :rtype: str
         """
-        return f"{self.__class__.__name__}({self.x}, {self.y}"
+        return f"{self.__class__.__name__}({self.x}, {self.y})"
 
     def __str__(self):
         """

@@ -452,7 +452,7 @@ def aberth_autocorr_mt(
             futures = []
 
             for i in range(len(zs)):
-                futures.append(executor.submit(aberth_autocorr_job, coeffs, i, zs))
+                futures.append(executor.submit(aberth_autocorr_job, coeffs, i, zs[:]))
 
             for future in futures:
                 tol_i, i, zi = future.result()
