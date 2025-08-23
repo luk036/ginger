@@ -141,3 +141,11 @@ def test_rootfind2():
     print([niter, found])
     print(find_rootq(vr) for vr in vrs)
     assert niter <= 11
+
+def test_find_rootq_negative_hr():
+    """Test find_rootq with d >= 0 and hr < 0."""
+    # x^2 + 5x + 6 = 0 => r = -5, q = -6
+    vr = Vector2(-5, -6)
+    roots = find_rootq(vr)
+    assert -3.0 == approx(roots[0])
+    assert -2.0 == approx(roots[1])

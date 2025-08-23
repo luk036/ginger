@@ -57,6 +57,32 @@ def test_aberth2():
     assert niter <= 10
 
 
+def test_initial_aberth_autocorr_large_radius():
+    """Test initial_aberth_autocorr with a large radius."""
+    h = [1.0, 0.0, 100.0]
+    z0s = initial_aberth_autocorr(h)
+    for z in z0s:
+        assert abs(z) < 1.1
+
+
+def test_aberth_non_convergence():
+    """Test non-convergence of aberth."""
+    h = [5.0, 2.0, 9.0, 6.0, 2.0]
+    z0s = initial_aberth(h)
+    opts = Options()
+    opts.max_iters = 1
+    _, _, found = aberth(h, z0s, opts)
+    assert found is False
+
+
+def test_aberth_autocorr_single_root():
+    """Test aberth_autocorr with a single root."""
+    h = [1.0, -1.0]
+    z0s = [0.0]
+    zs, niter, found = aberth_autocorr(h, z0s)
+    assert found is True
+
+
 r = [
     -0.00196191,
     -0.00094597,
@@ -170,7 +196,7 @@ def test_aberth_autocorr_fir():
 #     opt.tolerance = 1e-8
 #     zs, niter, found = aberth(r, z0s, opt)
 #     print([niter, found])
-#     for z in zs:
+#_    for z in zs:
 #         print(z)
 #     assert niter <= 12
 

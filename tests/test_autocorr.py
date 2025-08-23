@@ -35,12 +35,12 @@ def test_extract_autocorr_real_one_outside():
 def test_extract_autocorr_real_two_outside():
     """Test real roots, two outside unit circle."""
     # d > 0, two roots outside unit circle
-    # roots are 2, 3
-    vr = Vector2(5, -6)
+    # roots are 4, 5
+    vr = Vector2(9, -20)
     new_vr = extract_autocorr(vr)
-    # new roots should be 1/2, 1/3
-    assert new_vr.x == pytest.approx(1 / 2 + 1 / 3)
-    assert new_vr.y == pytest.approx(-(1 / 2 * 1 / 3))
+    # new roots should be 1/4, 1/5
+    assert new_vr.x == pytest.approx(1 / 4 + 1 / 5)
+    assert new_vr.y == pytest.approx(-(1 / 4 * 1 / 5))
 
 
 def test_extract_autocorr_real_both_inside():
