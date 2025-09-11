@@ -1,6 +1,7 @@
-import pytest
 import runpy
 from unittest.mock import patch
+
+import pytest
 
 from ginger.skeleton import fib, main, run
 
@@ -25,6 +26,7 @@ def test_main(capsys):
     main(["7"])
     captured = capsys.readouterr()
     assert "The 7-th Fibonacci number is 13" in captured.out
+
 
 def test_run(capsys):
     """CLI Tests"""

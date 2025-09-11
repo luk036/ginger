@@ -1,6 +1,7 @@
+from typing import List
+
 import numpy as np
 import pytest
-from typing import List
 
 
 def leja(points: List[complex]) -> List[complex]:

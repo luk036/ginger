@@ -19,15 +19,16 @@ Overall, this code provides a comprehensive toolkit for finding the roots of pol
 """
 
 from concurrent.futures import ThreadPoolExecutor
-from math import cos, sin, pi
+from math import cos, pi, sin
 from typing import List, Tuple
 
 from lds_gen.lds import Circle
 
-# from mywheel.robin import Robin
-
 # from pytest import approx
 from .rootfinding import Options, horner_eval, horner_eval_f
+
+# from mywheel.robin import Robin
+
 
 TWO_PI: float = 2.0 * pi
 

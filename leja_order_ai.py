@@ -16,8 +16,9 @@ An important aspect of the code's logic is how it iteratively builds the Leja or
 Overall, this code provides tools for working with complex points and polynomials, particularly in ways that can improve numerical stability in certain mathematical computations. It takes in either a set of points or polynomial coefficients and produces ordered points or factorized polynomials that have desirable properties for further calculations.
 """
 
-import numpy as np
 from typing import List
+
+import numpy as np
 
 
 def leja_order(points):

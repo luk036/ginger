@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from math import cos, sin, pow, pi
+from math import cos, pi, pow, sin
 from typing import List, Tuple
 
 # Assuming Options class is defined elsewhere and imported with proper annotations

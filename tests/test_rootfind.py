@@ -1,7 +1,14 @@
-from ginger.rootfinding import find_rootq, initial_guess, pbairstow_even
-from ginger.rootfinding import suppress2, suppress, delta
-from ginger.vector2 import Vector2
 from pytest import approx
+
+from ginger.rootfinding import (
+    delta,
+    find_rootq,
+    initial_guess,
+    pbairstow_even,
+    suppress,
+    suppress2,
+)
+from ginger.vector2 import Vector2
 
 
 def test_delta1():
@@ -141,6 +148,7 @@ def test_rootfind2():
     print([niter, found])
     print(find_rootq(vr) for vr in vrs)
     assert niter <= 11
+
 
 def test_find_rootq_negative_hr():
     """Test find_rootq with d >= 0 and hr < 0."""

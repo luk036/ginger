@@ -1,8 +1,8 @@
 from ginger.aberth import (
     aberth,
-    aberth_mt,
     aberth_autocorr,
     aberth_autocorr_mt,
+    aberth_mt,
     initial_aberth,
     initial_aberth_autocorr,
     initial_aberth_autocorr_orig,
@@ -196,7 +196,7 @@ def test_aberth_autocorr_fir():
 #     opt.tolerance = 1e-8
 #     zs, niter, found = aberth(r, z0s, opt)
 #     print([niter, found])
-#_    for z in zs:
+# _    for z in zs:
 #         print(z)
 #     assert niter <= 12
 

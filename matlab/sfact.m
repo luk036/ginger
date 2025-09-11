@@ -3,22 +3,22 @@ function lejaOrderedPoints = leja(points)
     if isempty(points)
         error('Input must be a non-empty vector of points.');
     end
-    
+
     % Start with the point having the smallest magnitude
     [~, idx] = min(abs(points));
     lejaOrderedPoints = points(idx);
     points(idx) = []; % Remove this point from further consideration
-    
+
     while ~isempty(points)
         % Compute distances from remaining points to the last point in lejaOrder
         distances = abs(points - lejaOrderedPoints(end));
-        
+
         % Find the index of the point with the maximum minimum distance
         [~, nextIdx] = max(distances);
-        
+
         % Append this point to the lejaOrderedPoints
         lejaOrderedPoints = [lejaOrderedPoints, points(nextIdx)];
-        
+
         % Remove this point from further consideration
         points(nextIdx) = [];
     end

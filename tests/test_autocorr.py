@@ -1,4 +1,5 @@
 import pytest
+
 from ginger.autocorr import extract_autocorr, initial_autocorr, pbairstow_autocorr
 from ginger.rootfinding import Options, find_rootq
 from ginger.vector2 import Vector2
