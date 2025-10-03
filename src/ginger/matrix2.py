@@ -116,9 +116,3 @@ class Matrix2:
         """
         return Matrix2(self.x / alpha, self.y / alpha)
 
-
-if __name__ == "__main__":
-    v = Vector2(3.0, 4.0)
-    w = Vector2(5.0, 6.0)
-    m = Matrix2(v, w)
-    print(m.det())

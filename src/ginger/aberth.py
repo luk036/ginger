@@ -20,17 +20,18 @@ Overall, this code provides a comprehensive toolkit for finding the roots of pol
 
 from concurrent.futures import ThreadPoolExecutor
 from math import cos, pi, sin
+import math
 from typing import List, Tuple
 
 from lds_gen.lds import Circle
 
-# from pytest import approx
+
 from .rootfinding import Options, horner_eval, horner_eval_f
 
 # from mywheel.robin import Robin
 
 
-TWO_PI: float = 2.0 * pi
+
 
 
 def horner_backward(coeffs1: List, degree: int, alpha: complex) -> complex:
@@ -128,8 +129,7 @@ def initial_aberth_orig(coeffs: List[float]) -> List[complex]:
     degree: int = len(coeffs) - 1
     center: float = -coeffs[1] / (degree * coeffs[0])
     poly_c: float = horner_eval_f(coeffs, center)
-    radius: float | complex = pow(-poly_c, 1.0 / degree)
-    k = TWO_PI / degree
+    k = 2.0 * math.pi / degree
     return [
         center + radius * (cos(theta) + sin(theta) * 1j)
         for theta in (k * (0.25 + i) for i in range(degree))
@@ -329,7 +329,7 @@ def initial_aberth_autocorr_orig(coeffs: List[float]) -> List[complex]:
     if abs(radius) > 1:
         radius = 1 / radius
     degree //= 2
-    k = TWO_PI / degree
+    k = 2.0 * math.pi / degree
     return [
         center + radius * (cos(theta) + sin(theta) * 1j)
         for theta in (k * (0.25 + i) for i in range(degree))
@@ -466,21 +466,3 @@ def aberth_autocorr_mt(
 
     return zs, options.max_iters, False
 
-
-# def test_aberth():
-#     h = [5.0, 2.0, 9.0, 6.0, 2.0]
-#     z0s = initial_aberth(h)
-#     zs, niter, found = aberth(h, z0s)
-#     assert (niter == 2)
-#     assert (found)
-#     zs, niter, found = aberth(h, z0s, Options(tolerance=1e-10))
-#     assert (niter == 2)
-#     assert (found)
-#     zs, niter, found = aberth(h, z0s, Options(max_iters=1))
-#     assert (niter == 1)
-#     assert (found)
-#     zs, niter, found = aberth(h, z0s, Options(max_iters=1, tolerance=1e-10))
-#     assert (niter == 1)
-#     assert (found)
-#     zs, niter, found = aberth(h, z0s, Options(max_iters=1, tolerance=1e-11))
-#     assert (niter == 0)

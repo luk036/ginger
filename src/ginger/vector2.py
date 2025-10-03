@@ -87,51 +87,6 @@ class Vector2:
         """
         return self._x * rhs._x + self._y * rhs._y
 
-    # def __iadd__(self, rhs):
-    #     """
-    #     In-place vector addition (+= operator).
-    #
-    #     This method modifies the current vector by adding another vector's
-    #     components to it. It implements the += operator for Vector2 objects.
-    #
-    #     :param rhs: The vector to add to this one
-    #     :type rhs: Vector2
-    #     :return: The modified vector (self)
-    #     :rtype: Vector2
-    #
-    #     Examples:
-    #         >>> v1 = Vector2(1, 2)
-    #         >>> v2 = Vector2(3, 4)
-    #         >>> v1 += v2
-    #         >>> print(v1)
-    #         <4, 6>
-    #     """
-    #     self._x += rhs.x
-    #     self._y += rhs.y
-    #     return self
-
-    # def __add__(self, rhs):
-    #     """
-    #     Vector addition (+ operator).
-    #
-    #     This method creates a new vector that is the sum of this vector and
-    #     another vector. It implements the + operator for Vector2 objects.
-    #
-    #     :param rhs: The vector to add to this one
-    #     :type rhs: Vector2
-    #     :return: A new vector representing the sum
-    #     :rtype: Vector2
-    #
-    #     Examples:
-    #         >>> v1 = Vector2(1, 2)
-    #         >>> v2 = Vector2(3, 4)
-    #         >>> print(v1 + v2)
-    #         <4, 6>
-    #         >>> print(v1)
-    #         <1, 2>
-    #     """
-    #     return Vector2(self.x + rhs.x, self.y + rhs.y)
-
     def __isub__(self, rhs):
         """
         In-place vector subtraction (-= operator).
@@ -293,8 +248,3 @@ class Vector2:
         # return "<{self.x}, {self.y}>".format(self=self)
         return f"<{self.x}, {self.y}>"
 
-
-# if __name__ == "__main__":
-#     v = Vector2(3.0, 4.0)
-#     w = Vector2(5.0, 6.0)
-#     print(v.dot(w))
