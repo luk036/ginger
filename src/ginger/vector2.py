@@ -247,4 +247,3 @@ class Vector2:
         """
         # return "<{self.x}, {self.y}>".format(self=self)
         return f"<{self.x}, {self.y}>"
-

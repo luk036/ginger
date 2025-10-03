@@ -46,8 +46,6 @@ from .vector2 import Vector2
 Num = Union[float, complex]
 
 
-
-
 # The class "Options" defines default values for maximum iterations, tolerance, and individual
 # tolerance.
 class Options:
@@ -99,7 +97,6 @@ def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
     return mp.mdot(vA) / mp.det()  # 6 mul's + 2 div's
 
 
-
 def suppress(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
     """Improved zero suppression for Bairstow's method.
 
@@ -143,7 +140,6 @@ def suppress(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
     va *= e
     va1 = m_adjoint.mdot(vc)
     return va, va1
-
 
 
 def horner_eval_f(coeffs: List, zval):
@@ -199,8 +195,6 @@ def horner_eval(coeffs: List, zval) -> Tuple[Any, List]:
     return coeffs[-1], coeffs
 
 
-
-
 #
 #                       ⎛ 2            ⎞
 #        P(x) = P (x) ⋅ ⎝x  - r ⋅ x - q⎠ + A ⋅ x + B
@@ -239,7 +233,6 @@ def horner(coeffs: List[float], degree: int, vr: Vector2) -> Vector2:
     return Vector2(coeffs[degree - 1], coeffs[degree])
 
 
-
 def initial_guess(coeffs: List[float]) -> List[Vector2]:
     """Generate initial root estimates for Bairstow's method.
 
@@ -268,7 +261,6 @@ def initial_guess(coeffs: List[float]) -> List[Vector2]:
     vgen.reseed(1)
     temp = iter(radius * cos(math.pi * vgen.pop()) for _ in range(1, degree, 2))
     return [Vector2(2 * (center + t), -(m + 2 * center * t)) for t in temp]
-
 
 
 #            new                               -1

@@ -115,4 +115,3 @@ class Matrix2:
             Returns new Matrix2(x/alpha, y/alpha)
         """
         return Matrix2(self.x / alpha, self.y / alpha)
-

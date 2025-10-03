@@ -8,9 +8,6 @@ from .rootfinding import Options, delta, horner, suppress
 from .vector2 import Vector2
 
 
-
-
-
 def initial_autocorr(coeffs: List[float]) -> List[Vector2]:
     """
     Calculates initial guesses for autocorrelation roots using coefficient analysis.

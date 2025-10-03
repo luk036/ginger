@@ -31,9 +31,6 @@ from .rootfinding import Options, horner_eval, horner_eval_f
 # from mywheel.robin import Robin
 
 
-
-
-
 def horner_backward(coeffs1: List, degree: int, alpha: complex) -> complex:
     """
     Backward polynomial evaluation using Horner's method for root refinement.
@@ -465,4 +462,3 @@ def aberth_autocorr_mt(
                 return zs, niter, True
 
     return zs, options.max_iters, False
-
