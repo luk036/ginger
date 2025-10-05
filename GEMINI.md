@@ -44,7 +44,7 @@ To build the project, use the following `tox` environments:
     ```
 *   **Build:** To create a new build:
     ```bash
-c    tox -e build
+    tox -e build
     ```
 
 ### Publishing
