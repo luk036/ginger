@@ -1,5 +1,4 @@
 from math import cos, pi, sqrt
-import math
 from typing import List
 
 from mywheel.robin import Robin
@@ -26,6 +25,7 @@ def initial_autocorr(coeffs: List[float]) -> List[Vector2]:
     if radius < 1:  # Focus on roots outside unit circle by taking reciprocal
         radius = 1 / radius
     degree //= 2  # Work with half-degree for conjugate pairs
+    k = pi / degree  # Angular step size between roots
 
     m = radius * radius  # Quadratic term for Vector2
     # Generate initial guesses using cosine distribution of roots

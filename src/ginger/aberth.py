@@ -126,6 +126,7 @@ def initial_aberth_orig(coeffs: List[float]) -> List[complex]:
     degree: int = len(coeffs) - 1
     center: float = -coeffs[1] / (degree * coeffs[0])
     poly_c: float = horner_eval_f(coeffs, center)
+    radius: float | complex = pow(-poly_c, 1.0 / degree)
     k = 2.0 * math.pi / degree
     return [
         center + radius * (cos(theta) + sin(theta) * 1j)
@@ -242,6 +243,12 @@ def aberth(
         >>> opt = Options()
         >>> opt.tolerance = 1e-8
         >>> zs, niter, found = aberth(h, z0s, opt)
+        >>> found
+        True
+
+        >>> h = [1.0, -1.0, -1.0, 1.0]
+        >>> z0s = initial_aberth(h)
+        >>> zs, niter, found = aberth(h, z0s)
         >>> found
         True
     """

@@ -6,7 +6,6 @@ from ginger.rootfinding import (
     initial_guess,
     pbairstow_even,
     suppress,
-    suppress2,
 )
 from ginger.vector2 import Vector2
 
@@ -66,70 +65,6 @@ def test_suppress2():
     vA, vA1 = suppress(vA, vA1, vri, vrk)
     vA, vA1 = suppress(vA, vA1, vri, vrj)
     dr2 = delta(vA, vri, vA1)
-    assert dr1.dot(dr1) == approx(dr2.dot(dr2))
-
-
-def test_suppress3():
-    vri = Vector2(-2, 0)
-    vrj = Vector2(4, 5)
-    vrk = Vector2(3, 7)
-
-    vA = Vector2(3, 3)
-    vA1 = Vector2(1, 2)
-    vA, vA1 = suppress2(vA, vA1, vri, vrj)
-    vA, vA1 = suppress2(vA, vA1, vri, vrk)
-    dr1 = delta(vA, vri, vA1)
-
-    vA = Vector2(3, 3)
-    vA1 = Vector2(1, 2)
-    vA, vA1 = suppress2(vA, vA1, vri, vrk)
-    vA, vA1 = suppress2(vA, vA1, vri, vrj)
-    dr2 = delta(vA, vri, vA1)
-    assert dr1.dot(dr1) == approx(dr2.dot(dr2))
-
-
-def test_suppress4():
-    vri = Vector2(-2, 0)
-    vrj = Vector2(4, 5)
-    vrk = Vector2(3, 7)
-    vrl = Vector2(-3, 1)
-
-    vA = Vector2(3, 3)
-    vA1 = Vector2(1, 2)
-    vA, vA1 = suppress2(vA, vA1, vri, vrj)
-    vA, vA1 = suppress2(vA, vA1, vri, vrk)
-    vA, vA1 = suppress2(vA, vA1, vri, vrl)
-    dr1 = delta(vA, vri, vA1)
-
-    vA = Vector2(3, 3)
-    vA1 = Vector2(1, 2)
-    vA, vA1 = suppress2(vA, vA1, vri, vrl)
-    vA, vA1 = suppress2(vA, vA1, vri, vrk)
-    vA, vA1 = suppress2(vA, vA1, vri, vrj)
-    dr2 = delta(vA, vri, vA1)
-    assert dr1.dot(dr1) == approx(dr2.dot(dr2))
-
-
-def test_suppress5():
-    vri = Vector2(-2, 0)
-    vrj = Vector2(4, 5)
-    Vector2(3, 7)
-    Vector2(-3, 1)
-
-    vA = Vector2(3, 3)
-    vA1 = Vector2(1, 2)
-    vA, vA1 = suppress(vA, vA1, vri, vrj)
-    # vA, vA1 = suppress(vA, vA1, vri, vrk)
-    dr1 = delta(vA, vri, vA1)
-
-    vA = Vector2(3, 3)
-    vA1 = Vector2(1, 2)
-    vA, vA1 = suppress2(vA, vA1, vri, vrj)
-    # vA, vA1 = suppress2(vA, vA1, vri, vrk)
-    dr2 = delta(vA, vri, vA1)
-
-    print(dr1)
-    print(dr2)
     assert dr1.dot(dr1) == approx(dr2.dot(dr2))
 
 

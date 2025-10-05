@@ -38,6 +38,7 @@ import math
 from typing import Any, List, Tuple, Union
 
 
+from lds_gen.lds import VdCorput
 from mywheel.robin import Robin
 
 from .matrix2 import Matrix2
@@ -95,6 +96,58 @@ def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
     p, s = vp.x, vp.y
     mp = Matrix2(Vector2(s, -p), Vector2(-p * q, p * r + s))
     return mp.mdot(vA) / mp.det()  # 6 mul's + 2 div's
+
+
+def suppress_old(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
+    """Original implementation of zero suppression in Bairstow's method.
+
+    This function modifies the residual vectors vA and vA1 to suppress the influence
+    of other roots (vrj) when estimating the current root (vri). This helps prevent
+    interference between root estimates during iteration.
+
+    Note: This is the original implementation that modifies vectors in-place.
+    The newer version returns modified vectors instead.
+
+    :param vA: Current residual vector (A,B)
+    :type vA: Vector2
+    :param vA1: First derivative residual vector (A1,B1)
+    :type vA1: Vector2
+    :param vri: Current root estimate being refined (ri,qi)
+    :type vri: Vector2
+    :param vrj: Another root estimate that might interfere (rj,qj)
+    :type vrj: Vector2
+
+    Reference:
+        D. C. Handscomb, Computation of the latent roots of a Hessenberg matrix
+        by Bairsow's method, Computer Journal, 5 (1962), pp. 139-141.
+
+    Examples:
+        >>> vA = Vector2(3, 3)
+        >>> vA1 = Vector2(1, 2)
+        >>> vri = Vector2(-2, 0)
+        >>> vrj = Vector2(4, 5)
+        >>> suppress_old(vA, vA1, vri, vrj)
+        >>> dr = delta(vA, vri, vA1)
+        >>> print(dr)
+        <-16.78082191780822, 1.4383561643835616>
+    """
+    A, B = vA.x, vA.y
+    A1, B1 = vA1.x, vA1.y
+    vp = vri - vrj
+    r, q = vri.x, vri.y
+    p, s = vp.x, vp.y
+    f = r * p + s
+    qp = q * p
+    e = f * s - qp * p
+    a = A * s - B * p
+    b = B * f - A * qp
+    c = A1 * e - a
+    d = B1 * e - b - a * p
+    vA._x = a * e
+    vA._y = b * e
+    vA1._x = c * s - d * p
+    vA1._y = d * f - c * qp
+    # return delta(vA, vri, Vector2(vA1._x, -vA1._y))
 
 
 def suppress(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
