@@ -33,7 +33,7 @@ Overall, this code provides a sophisticated tool for solving polynomial equation
 
 from functools import reduce
 from itertools import accumulate
-from math import cos, pi, sqrt
+from math import cos, sqrt
 import math
 from typing import Any, List, Tuple, Union
 

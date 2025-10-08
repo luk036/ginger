@@ -19,7 +19,7 @@ Overall, this code provides a comprehensive toolkit for finding the roots of pol
 """
 
 from concurrent.futures import ThreadPoolExecutor
-from math import cos, pi, sin
+from math import cos, sin
 import math
 from typing import List, Tuple
 
