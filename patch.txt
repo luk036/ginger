@@ -48,4 +48,3 @@ def suppress_old(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
     vA1._x = c * s - d * p
     vA1._y = d * f - c * qp
     # return delta(vA, vri, Vector2(vA1._x, -vA1._y))
-

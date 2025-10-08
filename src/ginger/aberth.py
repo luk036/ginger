@@ -18,13 +18,12 @@ The code also includes helper functions like horner_eval and horner_backward whi
 Overall, this code provides a comprehensive toolkit for finding the roots of polynomials using Aberth's method, with various optimizations and variations to handle different scenarios efficiently.
 """
 
+import math
 from concurrent.futures import ThreadPoolExecutor
 from math import cos, sin
-import math
 from typing import List, Tuple
 
 from lds_gen.lds import Circle
-
 
 from .rootfinding import Options, horner_eval, horner_eval_f
 

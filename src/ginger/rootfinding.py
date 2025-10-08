@@ -31,12 +31,11 @@ The code also includes helper functions for polynomial evaluation and manipulati
 Overall, this code provides a sophisticated tool for solving polynomial equations, even when the roots are complex numbers. It's designed to be efficient and accurate, making it useful for applications that require finding roots of high-degree polynomials.
 """
 
+import math
 from functools import reduce
 from itertools import accumulate
 from math import cos, sqrt
-import math
 from typing import Any, List, Tuple, Union
-
 
 from lds_gen.lds import VdCorput
 from mywheel.robin import Robin
