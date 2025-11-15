@@ -18,6 +18,10 @@ def initial_autocorr(coeffs: List[float]) -> List[Vector2]:
 
     :param coeffs: Polynomial coefficients from highest to lowest degree
     :return: List of Vector2 representing quadratic factors (x² - rx - q)
+
+    Examples:
+        >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
+        >>> vrs = initial_autocorr(h)
     """
     degree = len(coeffs) - 1
     # Calculate initial radius estimate using absolute value of constant term
@@ -48,6 +52,13 @@ def pbairstow_autocorr(
     :param vrs: Initial guesses for quadratic factors
     :param options: Algorithm control parameters
     :return: Tuple of (updated factors, iterations, convergence status)
+
+    Examples:
+        >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
+        >>> vrs = initial_autocorr(h)
+        >>> vrs, niter, found = pbairstow_autocorr(h, vrs)
+        >>> found
+        True
     """
     M = len(vrs)  # Number of quadratic factors
     degree = len(coeffs) - 1
@@ -103,6 +114,12 @@ def extract_autocorr(vr: Vector2) -> Vector2:
 
     :param vr: Vector2 representing quadratic coefficients (r, q)
     :return: Normalized Vector2 with roots inside unit circle
+
+    Examples:
+        >>> vr = Vector2(5, -6)
+        >>> vr_new = extract_autocorr(vr)
+        >>> print(vr_new)
+        <0.8333333333333333, -0.16666666666666666>
     """
     r, q = vr.x, vr.y
     hr = r / 2.0  # Half-radius
