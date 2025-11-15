@@ -66,10 +66,14 @@ class Options:
     # tol_suppress: float = 1e-1
 
 
-#                      -1
-#    ⎛r ⋅ p + s     p⎞     ⎛A⎞
-#    ⎜               ⎟   ⋅ ⎜ ⎟
-#    ⎝q ⋅ p         s⎠     ⎝B⎠
+#    .. svgbob::
+#
+#        ┌             ┐ -1  ┌ ┐
+#        │ r⋅p + s   p │     │A│
+#        │             │   ⋅ │ │
+#        │   q⋅p     s │     │B│
+#        └             ┘     └ ┘
+#
 def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
     """Calculate adjustment vector for Bairstow's method.
 
@@ -315,30 +319,31 @@ def initial_guess(coeffs: List[float]) -> List[Vector2]:
     return [Vector2(2 * (center + t), -(m + 2 * center * t)) for t in temp]
 
 
-#            new                               -1
-#        ⎛r ⎞      ⎛r ⎞   ⎛A'  ⋅ r  + B'    A' ⎞
-#        ⎜ i⎟      ⎜ i⎟   ⎜  1    i     1     1⎟     ⎛A⎞
-#        ⎜  ⎟    = ⎜  ⎟ - ⎜                    ⎟   ⋅ ⎜ ⎟
-#        ⎜q ⎟      ⎜q ⎟   ⎜ A'  ⋅ q         B' ⎟     ⎝B⎠
-#        ⎝ i⎠      ⎝ i⎠   ⎝  1    i           1⎠
+#    .. svgbob::
 #
-#    where
-#                         m
-#                       _____
-#                       ╲                         -1
-#        ⎛A' ⎞   ⎛A ⎞    ╲    ⎛p  ⋅ r  + s     p  ⎞
-#        ⎜  1⎟   ⎜ 1⎟     ╲   ⎜ ij   i    ij    ij⎟     ⎛A⎞
-#        ⎜   ⎟ = ⎜  ⎟ -   ╱   ⎜                   ⎟   ⋅ ⎜ ⎟
-#        ⎜B' ⎟   ⎜B ⎟    ╱    ⎜p  ⋅ q          s  ⎟     ⎝B⎠
-#        ⎝  1⎠   ⎝ 1⎠   ╱     ⎝ ij   i          ij⎠
-#                       ‾‾‾‾‾
-#                       j ≠ i
+#        ┌ ┐(new)   ┌ ┐     ┌-------------------┐ -1  ┌ ┐
+#        │rᵢ│       │rᵢ│     │ A'₁⋅rᵢ + B'₁   A'₁│     │A│
+#        │ │       │ │   - │                   │   ⋅ │ │
+#        │qᵢ│       │qᵢ│     │   A'₁⋅qᵢ      B'₁│     │B│
+#        └ ┘       └ ┘     └-------------------┘     └ ┘
 #
-#        ⎛p  ⎞   ⎛r ⎞   ⎛r ⎞
-#        ⎜ ij⎟   ⎜ i⎟   ⎜ j⎟
-#        ⎜   ⎟ = ⎜  ⎟ - ⎜  ⎟
-#        ⎜s  ⎟   ⎜q ⎟   ⎜q ⎟
-#        ⎝ ij⎠   ⎝ i⎠   ⎝ j⎠
+#        where
+#
+#          ┌   ┐     ┌  ┐     m   ┌--------------------┐ -1  ┌ ┐
+#          │A'₁│     │A₁│   _____ │ pᵢⱼ⋅rᵢ + sᵢⱼ   pᵢⱼ │     │A│
+#          │   │  =  │  │ -  ╲    │                    │   ⋅ │ │
+#          │B'₁│     │B₁│   ╱     │   pᵢⱼ⋅qᵢ     sᵢⱼ  │     │B│
+#          └   ┘     └  ┘    ‾‾‾‾‾ └--------------------┘     └ ┘
+#                           j ≠ i
+#
+#          and
+#
+#          ┌   ┐   ┌ ┐   ┌ ┐
+#          │pᵢⱼ│   │rᵢ│   │rⱼ│
+#          │   │ = │ │ - │ │
+#          │sᵢⱼ│   │qᵢ│   │qⱼ│
+#          └   ┘   └ ┘   └ ┘
+#
 def pbairstow_even(
     coeffs: List[float], vrs: List[Vector2], options=Options()
 ) -> Tuple[List[Vector2], int, bool]:

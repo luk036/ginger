@@ -188,23 +188,20 @@ def aberth_mt(
     return zs, options.max_iters, False
 
 
+#    .. svgbob::
 #
-#                     P ⎛z ⎞
-#          new          ⎝ i⎠
-#         z    = z  - ───────
-#          i      i   P' ⎛z ⎞
-#                        ⎝ i⎠
-#     where
-#                               n
-#                             _____
-#                             ╲
-#                              ╲    P ⎛z ⎞
-#                               ╲     ⎝ i⎠
-#         P' ⎛z ⎞ = P  ⎛z ⎞ -   ╱   ───────
-#            ⎝ i⎠    1 ⎝ i⎠    ╱    z  - z
-#                             ╱      i    j
-#                             ‾‾‾‾‾
-#                             j ≠ i
+#                         P(zᵢ)
+#          zᵢ' = zᵢ - ──────────────
+#                     P'(zᵢ)
+#
+#        where
+#                                   n
+#                                .-----.
+#                                 \      P(zᵢ)
+#          P'(zᵢ) = P₁(zᵢ) -       /    ────────
+#                                '-----' zᵢ - zⱼ
+#                                  j≠i
+#
 def aberth(
     coeffs: List[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
