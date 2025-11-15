@@ -11,7 +11,7 @@ class Vector2:
     _x: float
     _y: float
 
-    def __init__(self, x, y):
+    def __init__(self, x: float, y: float) -> None:
         """
         Initialize a new Vector2 instance with x and y components.
 
@@ -31,7 +31,7 @@ class Vector2:
         self._y = y
 
     @property
-    def x(self):
+    def x(self) -> float:
         """
         Getter property for the x-component of the vector.
 
@@ -49,7 +49,7 @@ class Vector2:
         return self._x
 
     @property
-    def y(self):
+    def y(self) -> float:
         """
         Getter property for the y-component of the vector.
 
@@ -66,7 +66,7 @@ class Vector2:
         """
         return self._y
 
-    def dot(self, rhs):
+    def dot(self, rhs: "Vector2") -> float:
         """
         Calculate the dot product of this vector with another vector.
 
@@ -87,7 +87,7 @@ class Vector2:
         """
         return self._x * rhs._x + self._y * rhs._y
 
-    def __isub__(self, rhs):
+    def __isub__(self, rhs: "Vector2") -> "Vector2":
         """
         In-place vector subtraction (-= operator).
 
@@ -112,7 +112,7 @@ class Vector2:
         self._y -= rhs.y
         return self
 
-    def __sub__(self, rhs):
+    def __sub__(self, rhs: "Vector2") -> "Vector2":
         """
         Vector subtraction (- operator).
 
@@ -136,7 +136,7 @@ class Vector2:
         """
         return Vector2(self.x - rhs.x, self.y - rhs.y)
 
-    def __imul__(self, alpha: float):
+    def __imul__(self, alpha: float) -> "Vector2":
         """
         In-place scalar multiplication (*= operator).
 
@@ -158,7 +158,7 @@ class Vector2:
         self._y *= alpha
         return self
 
-    def __mul__(self, alpha: float):
+    def __mul__(self, alpha: float) -> "Vector2":
         """
         Scalar multiplication (* operator).
 
@@ -180,7 +180,7 @@ class Vector2:
         """
         return Vector2(self.x * alpha, self.y * alpha)
 
-    def __truediv__(self, alpha: float):
+    def __truediv__(self, alpha: float) -> "Vector2":
         """
         Scalar division (/ operator).
 
@@ -213,7 +213,7 @@ class Vector2:
         """
         return Vector2(self.x / alpha, self.y / alpha)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Official string representation of the Vector2 object.
 
         This method provides the official string representation of the Vector2
@@ -224,7 +224,7 @@ class Vector2:
         """
         return f"{self.__class__.__name__}({self.x}, {self.y})"
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Informal string representation of the Vector2 object.
 

@@ -32,7 +32,7 @@ class Matrix2:
         self._y = y
 
     @property
-    def x(self):
+    def x(self) -> Vector2:
         """
         Get the first row vector of the matrix.
 
@@ -47,7 +47,7 @@ class Matrix2:
         return self._x
 
     @property
-    def y(self):
+    def y(self) -> Vector2:
         """
         Get the second row vector of the matrix.
 
@@ -101,7 +101,7 @@ class Matrix2:
         a21, a22 = self.y.x, self.y.y
         return a11 * a22 - a12 * a21
 
-    def __truediv__(self, alpha: float):
+    def __truediv__(self, alpha: float) -> "Matrix2":
         """
         Matrix scalar division: M / α.
 

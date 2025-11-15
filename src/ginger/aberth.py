@@ -21,12 +21,13 @@ Overall, this code provides a comprehensive toolkit for finding the roots of pol
 import math
 from concurrent.futures import ThreadPoolExecutor
 from math import cos, sin
-from typing import List, Tuple
+from typing import List, Sequence, Tuple, Union
 
 from lds_gen.lds import Circle
 
 from .rootfinding import Options, horner_eval, horner_eval_f
 
+Num = Union[float, complex]
 # from mywheel.robin import Robin
 
 
@@ -65,7 +66,7 @@ def horner_backward(coeffs1: List, degree: int, alpha: complex) -> complex:
     return coeffs1[-(degree + 1)]
 
 
-def initial_aberth(coeffs: List[float]) -> List[complex]:
+def initial_aberth(coeffs: Sequence[float]) -> List[complex]:
     """
     Generates initial root guesses using geometric distribution around a center point.
     Calculates center from polynomial coefficients and radius from evaluation at center.
@@ -89,7 +90,7 @@ def initial_aberth(coeffs: List[float]) -> List[complex]:
     """
     degree: int = len(coeffs) - 1
     center: float = -coeffs[1] / (degree * coeffs[0])
-    poly_c: float = horner_eval_f(coeffs, center)
+    poly_c: Num = horner_eval_f(coeffs, center)
     radius: float | complex = pow(-poly_c, 1.0 / degree)
     # radius: float = pow(abs(poly_c), 1.0 / degree)
     c_gen = Circle(2)
@@ -100,7 +101,7 @@ def initial_aberth(coeffs: List[float]) -> List[complex]:
     ]
 
 
-def initial_aberth_orig(coeffs: List[float]) -> List[complex]:
+def initial_aberth_orig(coeffs: Sequence[float]) -> List[complex]:
     """
     Original implementation of initial guess generation using trigonometric distribution.
     Places roots equally spaced around a circle with calculated radius and center.
@@ -124,7 +125,7 @@ def initial_aberth_orig(coeffs: List[float]) -> List[complex]:
     """
     degree: int = len(coeffs) - 1
     center: float = -coeffs[1] / (degree * coeffs[0])
-    poly_c: float = horner_eval_f(coeffs, center)
+    poly_c: Num = horner_eval_f(coeffs, center)
     radius: float | complex = pow(-poly_c, 1.0 / degree)
     k = 2.0 * math.pi / degree
     return [
@@ -134,7 +135,7 @@ def initial_aberth_orig(coeffs: List[float]) -> List[complex]:
 
 
 def aberth_mt(
-    coeffs: List[float], zs: List[complex], options: Options = Options()
+    coeffs: Sequence[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
     """
     Multithreaded implementation of Aberth's method.
@@ -203,7 +204,7 @@ def aberth_mt(
 #                                  j≠i
 #
 def aberth(
-    coeffs: List[float], zs: List[complex], options: Options = Options()
+    coeffs: Sequence[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
     """
     Core implementation of Aberth's root-finding algorithm.
@@ -264,7 +265,7 @@ def aberth(
     return zs, options.max_iters, False
 
 
-def initial_aberth_autocorr(coeffs: List[float]) -> List[complex]:
+def initial_aberth_autocorr(coeffs: Sequence[float]) -> List[complex]:
     """
     Generates initial guesses for autocorrelation polynomials.
     Special case handling for polynomials with reciprocal root pairs.
@@ -285,10 +286,9 @@ def initial_aberth_autocorr(coeffs: List[float]) -> List[complex]:
         >>> h = [5.0, 2.0, 9.0, 6.0, 2.0]
         >>> z0s = initial_aberth_autocorr(h)
     """
-
     degree: int = len(coeffs) - 1  # assume even
     center: float = -coeffs[1] / (degree * coeffs[0])
-    poly_c: float = horner_eval_f(coeffs, center)
+    poly_c: Num = horner_eval_f(coeffs, center)
     radius: float | complex = pow(-poly_c, 1.0 / degree)
     # radius: float | complex = pow(-coeffs[-1], 1.0 / degree)
     if abs(radius) > 1.0:
@@ -300,7 +300,7 @@ def initial_aberth_autocorr(coeffs: List[float]) -> List[complex]:
     ]
 
 
-def initial_aberth_autocorr_orig(coeffs: List[float]) -> List[complex]:
+def initial_aberth_autocorr_orig(coeffs: Sequence[float]) -> List[complex]:
     """
     Original trigonometric implementation for autocorrelation polynomials.
     Generates initial guesses on a circle with angular spacing considering reciprocal roots.
@@ -323,7 +323,7 @@ def initial_aberth_autocorr_orig(coeffs: List[float]) -> List[complex]:
     """
     degree: int = len(coeffs) - 1
     center: float = -coeffs[1] / (degree * coeffs[0])
-    poly_c: float = horner_eval_f(coeffs, center)
+    poly_c: Num = horner_eval_f(coeffs, center)
     radius: float = pow(abs(poly_c), 1.0 / degree)
     # radius: float = pow(abs(coeffs[-1]), 1.0 / degree)
     if abs(radius) > 1:
@@ -337,7 +337,7 @@ def initial_aberth_autocorr_orig(coeffs: List[float]) -> List[complex]:
 
 
 def aberth_autocorr(
-    coeffs: List[float], zs: List[complex], options=Options()
+    coeffs: Sequence[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
     """
     Aberth's method variant for autocorrelation polynomials.
@@ -391,7 +391,7 @@ def aberth_autocorr(
 
 
 def aberth_autocorr_job(
-    coeffs: List[float],
+    coeffs: Sequence[float],
     i: int,
     zsc: List[complex],
 ) -> Tuple[float, int, complex]:
@@ -426,7 +426,7 @@ def aberth_autocorr_job(
 
 
 def aberth_autocorr_mt(
-    coeffs: List[float], zs: List[complex], options: Options = Options()
+    coeffs: Sequence[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
     """
     Multithreaded version of autocorrelation Aberth's method.

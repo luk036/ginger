@@ -1,5 +1,5 @@
 from math import cos, pi, sqrt
-from typing import List
+from typing import List, Tuple
 
 from mywheel.robin import Robin
 
@@ -38,7 +38,7 @@ def initial_autocorr(coeffs: List[float]) -> List[Vector2]:
 
 def pbairstow_autocorr(
     coeffs: List[float], vrs: List[Vector2], options: Options = Options()
-):
+) -> Tuple[List[Vector2], int, bool]:
     """
     Implements Bairstow's method for polynomial root finding with autocorrelation.
 

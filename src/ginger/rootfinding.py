@@ -35,7 +35,7 @@ import math
 from functools import reduce
 from itertools import accumulate
 from math import cos, sqrt
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Sequence, Tuple, Union
 
 from lds_gen.lds import VdCorput
 from mywheel.robin import Robin
@@ -101,7 +101,7 @@ def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
     return mp.mdot(vA) / mp.det()  # 6 mul's + 2 div's
 
 
-def suppress_old(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
+def suppress_old(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2) -> None:
     """Original implementation of zero suppression in Bairstow's method.
 
     This function modifies the residual vectors vA and vA1 to suppress the influence
@@ -153,7 +153,9 @@ def suppress_old(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
     # return delta(vA, vri, Vector2(vA1._x, -vA1._y))
 
 
-def suppress(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
+def suppress(
+    vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2
+) -> Tuple[Vector2, Vector2]:
     """Improved zero suppression for Bairstow's method.
 
     This function calculates modified residual vectors that account for interference
@@ -198,7 +200,7 @@ def suppress(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2):
     return va, va1
 
 
-def horner_eval_f(coeffs: List, zval):
+def horner_eval_f(coeffs: Sequence[Num], zval: Num) -> Num:
     """Evaluate polynomial using Horner's method (functional version).
 
     This function computes the value of a polynomial at a given point using
@@ -225,7 +227,7 @@ def horner_eval_f(coeffs: List, zval):
 #
 #        P(z) = P (z) ⋅ ⎛z - z   ⎞ + A
 #                1      ⎝     val⎠
-def horner_eval(coeffs: List, zval) -> Tuple[Any, List]:
+def horner_eval(coeffs: Sequence[Num], zval: Num) -> Tuple[Any, List[Num]]:
     """Evaluate polynomial and return intermediate coefficients.
 
     This function uses Horner's method to evaluate a polynomial and also returns
@@ -307,7 +309,7 @@ def initial_guess(coeffs: List[float]) -> List[Vector2]:
     """
     degree: int = len(coeffs) - 1
     center: float = -coeffs[1] / (degree * coeffs[0])
-    poly_c: float = horner_eval_f(coeffs, center)
+    poly_c: Num = horner_eval_f(coeffs, center)
     radius: float = pow(abs(poly_c), 1.0 / degree)
     m: float = center * center + radius * radius
     degree //= 2
@@ -345,7 +347,7 @@ def initial_guess(coeffs: List[float]) -> List[Vector2]:
 #          └   ┘   └ ┘   └ ┘
 #
 def pbairstow_even(
-    coeffs: List[float], vrs: List[Vector2], options=Options()
+    coeffs: List[float], vrs: List[Vector2], options: Options = Options()
 ) -> Tuple[List[Vector2], int, bool]:
     """Parallel implementation of Bairstow's root-finding method.
 
