@@ -9,53 +9,53 @@ ginger.aberth module
 
 .. automodule:: ginger.aberth
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 ginger.autocorr module
 ----------------------
 
 .. automodule:: ginger.autocorr
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 ginger.matrix2 module
 ---------------------
 
 .. automodule:: ginger.matrix2
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 ginger.rootfinding module
 -------------------------
 
 .. automodule:: ginger.rootfinding
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 ginger.skeleton module
 ----------------------
 
 .. automodule:: ginger.skeleton
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 ginger.vector2 module
 ---------------------
 
 .. automodule:: ginger.vector2
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 Module contents
 ---------------
 
 .. automodule:: ginger
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

@@ -10,7 +10,7 @@ from ginger.rootfinding import (
 from ginger.vector2 import Vector2
 
 
-def test_delta1():
+def test_delta1() -> None:
     vri = Vector2(-2, 0)
     vrj = Vector2(4, 5)
     vrk = Vector2(3, 7)
@@ -27,7 +27,7 @@ def test_delta1():
     assert dr1.dot(dr1) == approx(dr2.dot(dr2))
 
 
-def test_suppress1():
+def test_suppress1() -> None:
     vri = Vector2(-2, 0)
     vrj = Vector2(4, 5)
     vrk = Vector2(3, 7)
@@ -46,7 +46,7 @@ def test_suppress1():
     assert dr1.dot(dr1) == approx(dr2.dot(dr2))
 
 
-def test_suppress2():
+def test_suppress2() -> None:
     vri = Vector2(-2, 0)
     vrj = Vector2(4, 5)
     vrk = Vector2(3, 7)
@@ -68,7 +68,7 @@ def test_suppress2():
     assert dr1.dot(dr1) == approx(dr2.dot(dr2))
 
 
-def test_rootfind():
+def test_rootfind() -> None:
     h = [5.0, 2.0, 9.0, 6.0, 2.0]
     vr0s = initial_guess(h)
     _, niter, found = pbairstow_even(h, vr0s)
@@ -76,7 +76,7 @@ def test_rootfind():
     assert niter <= 4
 
 
-def test_rootfind2():
+def test_rootfind2() -> None:
     h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
     vr0s = initial_guess(h)
     vrs, niter, found = pbairstow_even(h, vr0s)
@@ -85,7 +85,7 @@ def test_rootfind2():
     assert niter <= 11
 
 
-def test_find_rootq_negative_hr():
+def test_find_rootq_negative_hr() -> None:
     """Test find_rootq with d >= 0 and hr < 0."""
     # x^2 + 5x + 6 = 0 => r = -5, q = -6
     vr = Vector2(-5, -6)

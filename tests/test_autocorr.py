@@ -5,7 +5,7 @@ from ginger.rootfinding import Options, find_rootq
 from ginger.vector2 import Vector2
 
 
-def test_extract_autocorr_complex_outside():
+def test_extract_autocorr_complex_outside() -> None:
     """Test complex roots outside unit circle."""
     # d < 0 (complex roots), |q| > 1
     vr = extract_autocorr(Vector2(1, -4))
@@ -13,7 +13,7 @@ def test_extract_autocorr_complex_outside():
     assert vr.y == pytest.approx(-0.25)
 
 
-def test_extract_autocorr_complex_inside():
+def test_extract_autocorr_complex_inside() -> None:
     """Test complex roots inside unit circle."""
     # d < 0 (complex roots), |q| <= 1
     vr = Vector2(1, -0.5)
@@ -21,7 +21,7 @@ def test_extract_autocorr_complex_inside():
     assert new_vr is vr  # Should be unchanged
 
 
-def test_extract_autocorr_real_one_outside():
+def test_extract_autocorr_real_one_outside() -> None:
     """Test real roots, one outside unit circle."""
     # d > 0, one root outside unit circle
     # roots of x^2 - 3x - 2 = 0 are approx 3.56 and -0.56
@@ -33,7 +33,7 @@ def test_extract_autocorr_real_one_outside():
     assert abs(roots[1]) <= 1.0
 
 
-def test_extract_autocorr_real_two_outside():
+def test_extract_autocorr_real_two_outside() -> None:
     """Test real roots, two outside unit circle."""
     # d > 0, two roots outside unit circle
     # roots are 4, 5
@@ -44,7 +44,7 @@ def test_extract_autocorr_real_two_outside():
     assert new_vr.y == pytest.approx(-(1 / 4 * 1 / 5))
 
 
-def test_extract_autocorr_real_both_inside():
+def test_extract_autocorr_real_both_inside() -> None:
     """Test real roots, both inside unit circle."""
     # d > 0, both roots inside unit circle
     # roots are 0.5, 0.2
@@ -53,7 +53,7 @@ def test_extract_autocorr_real_both_inside():
     assert new_vr is vr  # Should be unchanged
 
 
-def test_autocorr_convergence():
+def test_autocorr_convergence() -> None:
     """Test convergence of pbairstow_autocorr."""
     h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
     vr0s = initial_autocorr(h)
@@ -69,7 +69,7 @@ def test_autocorr_convergence():
     assert found is True
 
 
-def test_autocorr_non_convergence():
+def test_autocorr_non_convergence() -> None:
     """Test non-convergence of pbairstow_autocorr."""
     h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
     vr0s = initial_autocorr(h)
@@ -80,7 +80,7 @@ def test_autocorr_non_convergence():
     assert found is False
 
 
-def test_autocorr_individual_convergence():
+def test_autocorr_individual_convergence() -> None:
     """Test individual convergence within pbairstow_autocorr."""
     h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
     vr0s = initial_autocorr(h)

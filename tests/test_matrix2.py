@@ -4,7 +4,7 @@ from ginger.matrix2 import Matrix2
 from ginger.vector2 import Vector2
 
 
-def test_matrix2_init():
+def test_matrix2_init() -> None:
     """Test initialization of Matrix2."""
     x = Vector2(1.0, 2.0)
     y = Vector2(3.0, 4.0)
@@ -13,7 +13,7 @@ def test_matrix2_init():
     assert m.y is y
 
 
-def test_matrix2_properties():
+def test_matrix2_properties() -> None:
     """Test properties of Matrix2."""
     x = Vector2(1.0, 2.0)
     y = Vector2(3.0, 4.0)
@@ -24,7 +24,7 @@ def test_matrix2_properties():
     assert m.y.y == 4.0
 
 
-def test_matrix2_mdot():
+def test_matrix2_mdot() -> None:
     """Test matrix-vector multiplication."""
     m = Matrix2(Vector2(1.0, 2.0), Vector2(3.0, 4.0))
     v = Vector2(5.0, 6.0)
@@ -34,13 +34,13 @@ def test_matrix2_mdot():
     assert result.y == 39.0
 
 
-def test_matrix2_det():
+def test_matrix2_det() -> None:
     """Test determinant calculation."""
     m = Matrix2(Vector2(1.0, 2.0), Vector2(3.0, 4.0))
     assert m.det() == -2.0
 
 
-def test_matrix2_truediv():
+def test_matrix2_truediv() -> None:
     """Test scalar division of Matrix2."""
     m = Matrix2(Vector2(2.0, 4.0), Vector2(6.0, 8.0))
     result = m / 2.0
@@ -51,7 +51,7 @@ def test_matrix2_truediv():
     assert result.y.y == 4.0
 
 
-def test_matrix2_truediv_by_zero():
+def test_matrix2_truediv_by_zero() -> None:
     """Test division by zero."""
     m = Matrix2(Vector2(1.0, 2.0), Vector2(3.0, 4.0))
     with pytest.raises(ZeroDivisionError):

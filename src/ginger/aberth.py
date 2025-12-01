@@ -189,25 +189,10 @@ def aberth_mt(
     return zs, options.max_iters, False
 
 
-#    .. svgbob::
-#
-#                         P(zᵢ)
-#          zᵢ' = zᵢ - ──────────────
-#                     P'(zᵢ)
-#
-#        where
-#                                   n
-#                                .-----.
-#                                 \      P(zᵢ)
-#          P'(zᵢ) = P₁(zᵢ) -       /    ────────
-#                                '-----' zᵢ - zⱼ
-#                                  j≠i
-#
 def aberth(
     coeffs: Sequence[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
-    """
-    Core implementation of Aberth's root-finding algorithm.
+    r"""Core implementation of Aberth's root-finding algorithm.
     Iteratively improves root estimates using polynomial evaluations and derivative approximations.
     Convergence is achieved when all residuals fall below specified tolerance.
 
@@ -233,6 +218,20 @@ def aberth(
                1. `zs`: a list of complex numbers representing the approximate roots of the polynomial.
                2. `niter`: an integer representing the number of iterations performed by Aberth's method.
                3. `found`: a boolean value indicating whether the roots were found within the specified tolerance.
+
+    .. svgbob::
+
+                     P(zᵢ)
+          zᵢ' = zᵢ - ──────
+                     P'(zᵢ)
+
+        where
+                                   n
+                                .-----.
+                                 \      P(zᵢ)
+          P'(zᵢ) = P₁(zᵢ) -       /    ────────
+                                '-----' zᵢ - zⱼ
+                                  j≠i
 
     Examples:
         >>> h = [5.0, 2.0, 9.0, 6.0, 2.0]

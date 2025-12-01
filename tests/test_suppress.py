@@ -4,7 +4,7 @@ from ginger.rootfinding import delta, suppress, suppress_old
 from ginger.vector2 import Vector2
 
 
-def test_suppress1():
+def test_suppress1() -> None:
     vri = Vector2(-2, 0)
     vrj = Vector2(4, -5)
 
@@ -22,7 +22,7 @@ def test_suppress1():
     assert dr_new._y == approx(dr_old._y)
 
 
-def test_suppress2():
+def test_suppress2() -> None:
     vr0 = Vector2(-2, 0)
     vr1 = Vector2(4, -5)
     vr2 = Vector2(-1, 3)

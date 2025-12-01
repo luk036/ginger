@@ -54,7 +54,7 @@ r = [
 ]
 
 
-def test_fir_even():
+def test_fir_even() -> None:
     vr0s = initial_guess(r)
     opts = Options()
     opts.tolerance = 4e-8
@@ -66,7 +66,7 @@ def test_fir_even():
     assert niter <= 181
 
 
-def test_fir_auto():
+def test_fir_auto() -> None:
     vr0s = initial_autocorr(r)
     print("vrs: {}".format(len(vr0s)))
     opts = Options()

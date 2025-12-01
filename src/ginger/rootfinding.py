@@ -66,14 +66,6 @@ class Options:
     # tol_suppress: float = 1e-1
 
 
-#    .. svgbob::
-#
-#        ┌             ┐ -1  ┌ ┐
-#        │ r⋅p + s   p │     │A│
-#        │             │   ⋅ │ │
-#        │   q⋅p     s │     │B│
-#        └             ┘     └ ┘
-#
 def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
     """Calculate adjustment vector for Bairstow's method.
 
@@ -89,6 +81,14 @@ def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
     :type vp: Vector2
     :return: Correction vector to adjust root estimates
     :rtype: Vector2
+
+    .. svgbob::
+
+        ┌             ┐ -1  ┌ ┐
+        │ r⋅p + s   p │     │A│
+        │             │   ⋅ │ │
+        │   q⋅p     s │     │B│
+        └             ┘     └ ┘
 
     Examples:
         >>> d = delta(Vector2(1, 2), Vector2(-2, 0), Vector2(4, 5))
@@ -321,35 +321,10 @@ def initial_guess(coeffs: List[float]) -> List[Vector2]:
     return [Vector2(2 * (center + t), -(m + 2 * center * t)) for t in temp]
 
 
-#    .. svgbob::
-#
-#        ┌ ┐(new)   ┌ ┐     ┌-------------------┐ -1  ┌ ┐
-#        │rᵢ│       │rᵢ│     │ A'₁⋅rᵢ + B'₁   A'₁│     │A│
-#        │ │       │ │   - │                   │   ⋅ │ │
-#        │qᵢ│       │qᵢ│     │   A'₁⋅qᵢ      B'₁│     │B│
-#        └ ┘       └ ┘     └-------------------┘     └ ┘
-#
-#        where
-#
-#          ┌   ┐     ┌  ┐     m   ┌--------------------┐ -1  ┌ ┐
-#          │A'₁│     │A₁│   _____ │ pᵢⱼ⋅rᵢ + sᵢⱼ   pᵢⱼ │     │A│
-#          │   │  =  │  │ -  ╲    │                    │   ⋅ │ │
-#          │B'₁│     │B₁│   ╱     │   pᵢⱼ⋅qᵢ     sᵢⱼ  │     │B│
-#          └   ┘     └  ┘    ‾‾‾‾‾ └--------------------┘     └ ┘
-#                           j ≠ i
-#
-#          and
-#
-#          ┌   ┐   ┌ ┐   ┌ ┐
-#          │pᵢⱼ│   │rᵢ│   │rⱼ│
-#          │   │ = │ │ - │ │
-#          │sᵢⱼ│   │qᵢ│   │qⱼ│
-#          └   ┘   └ ┘   └ ┘
-#
 def pbairstow_even(
     coeffs: List[float], vrs: List[Vector2], options: Options = Options()
 ) -> Tuple[List[Vector2], int, bool]:
-    """Parallel implementation of Bairstow's root-finding method.
+    r"""Parallel implementation of Bairstow's root-finding method.
 
     This function implements a parallel version of Bairstow's method for finding
     all roots of a polynomial simultaneously. It works by iteratively improving
@@ -366,6 +341,31 @@ def pbairstow_even(
              - Number of iterations performed
              - Convergence status (True if converged)
     :rtype: Tuple[List[Vector2], int, bool]
+
+    .. svgbob::
+
+        ┌ ┐(new)   ┌ ┐     ┌-------------------┐ -1  ┌ ┐
+        │rᵢ│       │rᵢ│     │ A'₁⋅rᵢ + B'₁   A'₁│     │A│
+        │ │       │ │   - │                   │   ⋅ │ │
+        │qᵢ│       │qᵢ│     │   A'₁⋅qᵢ      B'₁│     │B│
+        └ ┘       └ ┘     └-------------------┘     └ ┘
+
+        where
+
+          ┌   ┐     ┌  ┐     m   ┌--------------------┐ -1  ┌ ┐
+          │A'₁│     │A₁│   _____ │ pᵢⱼ⋅rᵢ + sᵢⱼ   pᵢⱼ │     │A│
+          │   │  =  │  │ -  ╲    │                    │   ⋅ │ │
+          │B'₁│     │B₁│   ╱     │   pᵢⱼ⋅qᵢ     sᵢⱼ  │     │B│
+          └   ┘     └  ┘    ‾‾‾‾‾ └--------------------┘     └ ┘
+                           j ≠ i
+
+          and
+
+          ┌   ┐   ┌ ┐   ┌ ┐
+          │pᵢⱼ│   │rᵢ│   │rⱼ│
+          │   │ = │ │ - │ │
+          │sᵢⱼ│   │qᵢ│   │qⱼ│
+          └   ┘   └ ┘   └ ┘
 
     Examples:
         >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]

@@ -101,7 +101,7 @@ def sfact(p: List[float]):
     return h, r_leja_ordered
 
 
-def test_leja_empty_input():
+def test_leja_empty_input() -> None:
     """Test that leja function raises an error for empty input."""
     with pytest.raises(ValueError, match="Input must be a non-empty vector of points."):
         leja([])

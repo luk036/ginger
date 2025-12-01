@@ -11,7 +11,7 @@ from ginger.aberth import (
 from ginger.rootfinding import Options
 
 
-def test_aberth1():
+def test_aberth1() -> None:
     h = [5.0, 2.0, 9.0, 6.0, 2.0]
 
     z0s = initial_aberth(h)
@@ -30,7 +30,7 @@ def test_aberth1():
     assert niter <= 7
 
 
-def test_aberth2():
+def test_aberth2() -> None:
     h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
 
     z0s = initial_aberth(h)
@@ -57,7 +57,7 @@ def test_aberth2():
     assert niter <= 10
 
 
-def test_initial_aberth_autocorr_large_radius():
+def test_initial_aberth_autocorr_large_radius() -> None:
     """Test initial_aberth_autocorr with a large radius."""
     h = [1.0, 0.0, 100.0]
     z0s = initial_aberth_autocorr(h)
@@ -65,7 +65,7 @@ def test_initial_aberth_autocorr_large_radius():
         assert abs(z) < 1.1
 
 
-def test_aberth_non_convergence():
+def test_aberth_non_convergence() -> None:
     """Test non-convergence of aberth."""
     h = [5.0, 2.0, 9.0, 6.0, 2.0]
     z0s = initial_aberth(h)
@@ -75,10 +75,10 @@ def test_aberth_non_convergence():
     assert found is False
 
 
-def test_aberth_autocorr_single_root():
+def test_aberth_autocorr_single_root() -> None:
     """Test aberth_autocorr with a single root."""
     h = [1.0, -1.0]
-    z0s = [0.0]
+    z0s = [0.0 + 0j]  # Use complex number to match expected type
     zs, niter, found = aberth_autocorr(h, z0s)
     assert found is True
 
@@ -136,7 +136,7 @@ r = [
 ]
 
 
-def test_aberth_fir():
+def test_aberth_fir() -> None:
     opt = Options()
     opt.tolerance = 1e-8
 
@@ -163,7 +163,7 @@ def test_aberth_fir():
     assert niter <= 14
 
 
-def test_aberth_autocorr_fir():
+def test_aberth_autocorr_fir() -> None:
     opt = Options()
     opt.tolerance = 1e-13
 
@@ -190,7 +190,7 @@ def test_aberth_autocorr_fir():
     assert niter <= 15
 
 
-# def test_aberth_fir_orig():
+# def test_aberth_fir_orig() -> None:
 #     z0s = initial_aberth_orig(r)
 #     opt = Options()
 #     opt.tolerance = 1e-8
@@ -201,7 +201,7 @@ def test_aberth_autocorr_fir():
 #     assert niter <= 12
 
 
-# def test_aberth_autocorr_fir_orig():
+# def test_aberth_autocorr_fir_orig() -> None:
 #     opt = Options()
 #     opt.tolerance = 1e-14
 #     z0s = initial_aberth_autocorr_orig(r)
@@ -212,7 +212,7 @@ def test_aberth_autocorr_fir():
 #     assert niter <= 11
 
 
-# def test_aberth_fir_lds():
+# def test_aberth_fir_lds() -> None:
 #     r = [
 #         -0.00196191,
 #         -0.00094597,
