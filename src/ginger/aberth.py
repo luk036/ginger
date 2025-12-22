@@ -127,10 +127,10 @@ def initial_aberth_orig(coeffs: Sequence[float]) -> List[complex]:
     center: float = -coeffs[1] / (degree * coeffs[0])
     poly_c: Num = horner_eval_f(coeffs, center)
     radius: float | complex = pow(-poly_c, 1.0 / degree)
-    k = 2.0 * math.pi / degree
+    angle_step = 2.0 * math.pi / degree
     return [
         center + radius * (cos(theta) + sin(theta) * 1j)
-        for theta in (k * (0.25 + i) for i in range(degree))
+        for theta in (angle_step * (0.25 + i) for i in range(degree))
     ]
 
 
@@ -328,10 +328,10 @@ def initial_aberth_autocorr_orig(coeffs: Sequence[float]) -> List[complex]:
     if abs(radius) > 1:
         radius = 1 / radius
     degree //= 2
-    k = 2.0 * math.pi / degree
+    angle_step = 2.0 * math.pi / degree
     return [
         center + radius * (cos(theta) + sin(theta) * 1j)
-        for theta in (k * (0.25 + i) for i in range(degree))
+        for theta in (angle_step * (0.25 + i) for i in range(degree))
     ]
 
 

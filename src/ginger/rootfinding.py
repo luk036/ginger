@@ -95,9 +95,12 @@ def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
         >>> print(d)
         <0.2, 0.4>
     """
-    r, q = vr.x, vr.y
-    p, s = vp.x, vp.y
-    mp = Matrix2(Vector2(s, -p), Vector2(-p * q, p * r + s))
+    r_coeff, q_coeff = vr.x, vr.y
+    p_coeff, s_coeff = vp.x, vp.y
+    mp = Matrix2(
+        Vector2(s_coeff, -p_coeff),
+        Vector2(-p_coeff * q_coeff, p_coeff * r_coeff + s_coeff),
+    )
     return mp.mdot(vA) / mp.det()  # 6 mul's + 2 div's
 
 
@@ -134,22 +137,22 @@ def suppress_old(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2) -> None:
         >>> print(dr)
         <-16.78082191780822, 1.4383561643835616>
     """
-    A, B = vA.x, vA.y
-    A1, B1 = vA1.x, vA1.y
+    A_val, B_val = vA.x, vA.y
+    A1_val, B1_val = vA1.x, vA1.y
     vp = vri - vrj
-    r, q = vri.x, vri.y
-    p, s = vp.x, vp.y
-    f = r * p + s
-    qp = q * p
-    e = f * s - qp * p
-    a = A * s - B * p
-    b = B * f - A * qp
-    c = A1 * e - a
-    d = B1 * e - b - a * p
-    vA._x = a * e
-    vA._y = b * e
-    vA1._x = c * s - d * p
-    vA1._y = d * f - c * qp
+    r_coeff, q_coeff = vri.x, vri.y
+    p_coeff, s_coeff = vp.x, vp.y
+    f_val = r_coeff * p_coeff + s_coeff
+    qp_val = q_coeff * p_coeff
+    e_val = f_val * s_coeff - qp_val * p_coeff
+    a_val = A_val * s_coeff - B_val * p_coeff
+    b_val = B_val * f_val - A_val * qp_val
+    c_val = A1_val * e_val - a_val
+    d_val = B1_val * e_val - b_val - a_val * p_coeff
+    vA._x = a_val * e_val
+    vA._y = b_val * e_val
+    vA1._x = c_val * s_coeff - d_val * p_coeff
+    vA1._y = d_val * f_val - c_val * qp_val
     # return delta(vA, vri, Vector2(vA1._x, -vA1._y))
 
 
@@ -188,14 +191,17 @@ def suppress(
         <-16.78082191780822, 1.4383561643835616>
     """
     vp = vri - vrj
-    r, q = vri.x, vri.y
-    p, s = vp.x, vp.y
-    m_adjoint = Matrix2(Vector2(s, -p), Vector2(-p * q, p * r + s))
-    e = m_adjoint.det()
+    r_coeff, q_coeff = vri.x, vri.y
+    p_coeff, s_coeff = vp.x, vp.y
+    m_adjoint = Matrix2(
+        Vector2(s_coeff, -p_coeff),
+        Vector2(-p_coeff * q_coeff, p_coeff * r_coeff + s_coeff),
+    )
+    e_val = m_adjoint.det()
     va = m_adjoint.mdot(vA)
-    vc = vA1 * e - va
-    vc._y -= va._x * p
-    va *= e
+    vc = vA1 * e_val - va
+    vc._y -= va._x * p_coeff
+    va *= e_val
     va1 = m_adjoint.mdot(vc)
     return va, va1
 
@@ -311,14 +317,14 @@ def initial_guess(coeffs: List[float]) -> List[Vector2]:
     center: float = -coeffs[1] / (degree * coeffs[0])
     poly_c: Num = horner_eval_f(coeffs, center)
     radius: float = pow(abs(poly_c), 1.0 / degree)
-    m: float = center * center + radius * radius
+    quad_term: float = center * center + radius * radius
     degree //= 2
     degree *= 2  # make even
 
     vgen = VdCorput(2)
     vgen.reseed(1)
     temp = iter(radius * cos(math.pi * vgen.pop()) for _ in range(1, degree, 2))
-    return [Vector2(2 * (center + t), -(m + 2 * center * t)) for t in temp]
+    return [Vector2(2 * (center + t), -(quad_term + 2 * center * t)) for t in temp]
 
 
 def pbairstow_even(
@@ -374,10 +380,10 @@ def pbairstow_even(
         >>> print(found)
         True
     """
-    M = len(vrs)
+    num_factors = len(vrs)
     degree = len(coeffs) - 1
-    converged = [False] * M
-    robin = Robin(M)
+    converged = [False] * num_factors
+    robin = Robin(num_factors)
     for niter in range(options.max_iters):
         tolerance = 0.0
         for i, (vri, ci) in enumerate(zip(vrs, converged)):
@@ -417,11 +423,13 @@ def find_rootq(vr: Vector2) -> Tuple[Num, Num]:
         (3.0, 2.0)
     """
 
-    hr = vr.x / 2
-    d = hr * hr + vr.y
-    if d < 0:
-        x1 = hr + sqrt(-d) * 1j
+    half_radius = vr.x / 2
+    discriminant = half_radius * half_radius + vr.y
+    if discriminant < 0:
+        root1 = half_radius + sqrt(-discriminant) * 1j
     else:
-        x1 = hr + (sqrt(d) if hr >= 0 else -sqrt(d))
-    x2 = -vr.y / x1
-    return x1, x2
+        root1 = half_radius + (
+            sqrt(discriminant) if half_radius >= 0 else -sqrt(discriminant)
+        )
+    root2 = -vr.y / root1
+    return root1, root2

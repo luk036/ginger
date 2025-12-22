@@ -29,11 +29,14 @@ def initial_autocorr(coeffs: List[float]) -> List[Vector2]:
     if radius < 1:  # Focus on roots outside unit circle by taking reciprocal
         radius = 1 / radius
     degree //= 2  # Work with half-degree for conjugate pairs
-    k = pi / degree  # Angular step size between roots
+    angle_step = pi / degree  # Angular step size between roots
 
-    m = radius * radius  # Quadratic term for Vector2
+    quad_term = radius * radius  # Quadratic term for Vector2
     # Generate initial guesses using cosine distribution of roots
-    return [Vector2(2 * radius * cos(k * i), -m) for i in range(1, degree, 2)]
+    return [
+        Vector2(2 * radius * cos(angle_step * i), -quad_term)
+        for i in range(1, degree, 2)
+    ]
 
 
 def pbairstow_autocorr(
@@ -60,10 +63,10 @@ def pbairstow_autocorr(
         >>> found
         True
     """
-    M = len(vrs)  # Number of quadratic factors
+    num_factors = len(vrs)  # Number of quadratic factors
     degree = len(coeffs) - 1
-    converged = [False] * M  # Convergence status tracker
-    robin = Robin(M)  # Round-robin iterator for factor updates
+    converged = [False] * num_factors  # Convergence status tracker
+    robin = Robin(num_factors)  # Round-robin iterator for factor updates
 
     for niter in range(options.max_iters):
         tolerance = 0.0  # Track maximum error across all factors
@@ -121,26 +124,28 @@ def extract_autocorr(vr: Vector2) -> Vector2:
         >>> print(vr_new)
         <0.8333333333333333, -0.16666666666666666>
     """
-    r, q = vr.x, vr.y
-    hr = r / 2.0  # Half-radius
-    d = hr * hr + q  # Discriminant
+    r_coeff, q_coeff = vr.x, vr.y
+    half_radius = r_coeff / 2.0  # Half-radius
+    discriminant = half_radius * half_radius + q_coeff  # Discriminant
 
-    if d < 0.0:  # Complex conjugate roots case
-        if q < -1.0:  # Ensure magnitude using reciprocal
-            vr = Vector2(-r, 1.0) / q
+    if discriminant < 0.0:  # Complex conjugate roots case
+        if q_coeff < -1.0:  # Ensure magnitude using reciprocal
+            vr = Vector2(-r_coeff, 1.0) / q_coeff
     else:  # Real roots case
         # Calculate roots using alternative quadratic formula
-        a1 = hr + (sqrt(d) if hr >= 0.0 else -sqrt(d))
-        a2 = -q / a1  # Second root from Vieta's formula
+        root1 = half_radius + (
+            sqrt(discriminant) if half_radius >= 0.0 else -sqrt(discriminant)
+        )
+        root2 = -q_coeff / root1  # Second root from Vieta's formula
 
         # Handle roots outside unit circle
-        if abs(a1) > 1.0:
-            a1 = 1.0 / a1
-            if abs(a2) > 1.0:
-                a2 = 1.0 / a2
-            vr = Vector2(a1 + a2, -a1 * a2)
-        elif abs(a2) > 1.0:
-            a2 = 1.0 / a2
-            vr = Vector2(a1 + a2, -a1 * a2)
+        if abs(root1) > 1.0:
+            root1 = 1.0 / root1
+            if abs(root2) > 1.0:
+                root2 = 1.0 / root2
+            vr = Vector2(root1 + root2, -root1 * root2)
+        elif abs(root2) > 1.0:
+            root2 = 1.0 / root2
+            vr = Vector2(root1 + root2, -root1 * root2)
 
     return vr
