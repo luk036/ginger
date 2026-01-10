@@ -56,11 +56,11 @@ if(BUILD_TESTS)
         tests/test_rootfind.cpp
         tests/test_vector2.cpp
     )
-    
+
     # Create test executable
     add_executable(ginger_tests ${TEST_SOURCES})
     target_link_libraries(ginger_tests ginger_cpp doctest)
-    
+
     # Add test
     add_test(NAME ginger_tests COMMAND ginger_tests)
 endif()

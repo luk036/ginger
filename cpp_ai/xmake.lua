@@ -13,7 +13,7 @@ target("ginger_tests")
     add_deps("ginger_cpp")
     add_files("tests/**.cpp")
     add_includedirs("include")
-    
+
     -- Add doctest
     add_requires("doctest")
     add_packages("doctest")

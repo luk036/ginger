@@ -12,8 +12,8 @@ std::vector<Vector2> initial_autocorr(const std::vector<double>& coeffs);
 
 // Implements Bairstow's method for polynomial root finding with autocorrelation
 std::tuple<std::vector<Vector2>, int, bool> pbairstow_autocorr(
-    const std::vector<double>& coeffs, 
-    std::vector<Vector2>& vrs, 
+    const std::vector<double>& coeffs,
+    std::vector<Vector2>& vrs,
     const Options& options = Options());
 
 // Normalizes quadratic factors to ensure roots within unit circle

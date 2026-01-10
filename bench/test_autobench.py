@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
+from typing import Any
+
 from ginger.autocorr import initial_autocorr, pbairstow_autocorr
 from ginger.rootfinding import initial_guess, pbairstow_even
-from typing import Any
 
 
 def run_autocorr() -> int:
