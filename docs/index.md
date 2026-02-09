@@ -14,19 +14,22 @@ Polynomial Root Finding Python Code
 
 ## Contents
 
-- [Overview](readme)
-- [License](license)
-- [Authors](authors)
-- [Changelog](changelog)
-- [Module Reference](api/modules)
+```{toctree}
+:maxdepth: 2
+
+readme
+license
+authors
+changelog
+contributing
+api/modules
+```
 
 ## Indices and tables
 
-```eval_rst
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-```
+* [genindex](genindex)
+* [modindex](modindex)
+* [search](search)
 
 [sphinx]: http://www.sphinx-doc.org/
 [markdown]: https://daringfireball.net/projects/markdown/

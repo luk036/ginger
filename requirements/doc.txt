@@ -1,3 +1,4 @@
+myst-parser>=0.18
 nb2plots>=0.5.2
 pillow>=4.2.1
 recommonmark>=0.7

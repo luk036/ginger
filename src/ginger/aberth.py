@@ -1,21 +1,38 @@
 """
 Aberth's Method for Polynomial Root Finding
 
-This code implements Aberth's method, which is an algorithm for finding the roots of polynomials. In simple terms, it's a way to solve equations like x^3 + 2x^2 - 5x + 3 = 0, finding the values of x that make the equation true.
+This code implements Aberth's method, which is an algorithm for finding the roots of
+polynomials. In simple terms, it's a way to solve equations like x^3 + 2x^2 - 5x + 3 = 0,
+finding the values of x that make the equation true.
 
-The main input for this code is a list of coefficients that represent a polynomial. For example, [1, 2, -5, 3] would represent the polynomial x^3 + 2x^2 - 5x + 3. The code also takes initial guesses for where the roots might be.
+The main input for this code is a list of coefficients that represent a polynomial. For example,
+[1, 2, -5, 3] would represent the polynomial x^3 + 2x^2 - 5x + 3. The code also takes initial
+guesses for where the roots might be.
 
-The output is a list of complex numbers that represent the roots of the polynomial. These are the solutions to the equation. The code also returns the number of iterations it took to find the roots and whether it was successful in finding them within the specified tolerance.
+The output is a list of complex numbers that represent the roots of the polynomial. These are the
+solutions to the equation. The code also returns the number of iterations it took to find the
+roots and whether it was successful in finding them within the specified tolerance.
 
-To achieve its purpose, the code uses an iterative process. It starts with initial guesses for the roots and then repeatedly improves these guesses until they're close enough to the actual roots. The main algorithm, Aberth's method, is implemented in the aberth function. This function uses a clever mathematical formula to update each guess based on the current polynomial value and its derivative at that point, as well as the positions of all the other guesses.
+To achieve its purpose, the code uses an iterative process. It starts with initial guesses for the
+roots and then repeatedly improves these guesses until they're close enough to the actual roots.
+The main algorithm, Aberth's method, is implemented in the aberth function. This function uses a
+clever mathematical formula to update each guess based on the current polynomial value and its
+derivative at that point, as well as the positions of all the other guesses.
 
-The code includes several variations of the algorithm. There's a basic version (aberth), a multithreaded version for faster computation (aberth_mt), and versions that use autocorrelation (aberth_autocorr and aberth_autocorr_mt). These autocorrelation versions are designed to work better for certain types of polynomials.
+The code includes several variations of the algorithm. There's a basic version (aberth), a
+multithreaded version for faster computation (aberth_mt), and versions that use autocorrelation
+(aberth_autocorr and aberth_autocorr_mt). These autocorrelation versions are designed to work
+better for certain types of polynomials.
 
-An important part of the process is finding good initial guesses for the roots. The code includes several functions for this, like initial_aberth and initial_aberth_autocorr. These functions use mathematical insights about where roots are likely to be located to make educated guesses.
+An important part of the process is finding good initial guesses for the roots. The code includes
+several functions for this, like initial_aberth and initial_aberth_autocorr. These functions use
+mathematical insights about where roots are likely to be located to make educated guesses.
 
-The code also includes helper functions like horner_eval and horner_backward which are efficient ways to evaluate polynomials and their derivatives.
+The code also includes helper functions like horner_eval and horner_backward which are efficient
+ways to evaluate polynomials and their derivatives.
 
-Overall, this code provides a comprehensive toolkit for finding the roots of polynomials using Aberth's method, with various optimizations and variations to handle different scenarios efficiently.
+Overall, this code provides a comprehensive toolkit for finding the roots of polynomials using
+Aberth's method, with various optimizations and variations to handle different scenarios efficiently.
 """
 
 import math
@@ -37,18 +54,24 @@ def horner_backward(coeffs1: List, degree: int, alpha: complex) -> complex:
     Evaluates polynomial at x=α using coefficients in reverse order.
     This implementation modifies coefficients in-place for efficiency.
 
-    The `horner_backward` function evaluates a polynomial using the Horner's method in backward form.
-    This is particularly useful for root refinement in iterative methods like Aberth's.
-    It works by transforming the polynomial coefficients to center them around α,
+    The `horner_backward` function evaluates a polynomial using the Horner's method in
+    backward form. This is particularly useful for root refinement in iterative methods like
+    Aberth's. It works by transforming the polynomial coefficients to center them around α,
     which helps in accurately evaluating the polynomial and its derivatives at α.
 
-    :param coeffs1: The parameter `coeffs1` is a list of coefficients of a polynomial in descending order of degree. For example, if the polynomial is `3x^3 - 2x^2 + 5x - 1`, then `coeffs1` would be `[3, -2, 5, -1]`
+    :param coeffs1: The parameter `coeffs1` is a list of coefficients of a polynomial in
+                    descending order of degree. For example, if the polynomial is
+                    `3x^3 - 2x^2 + 5x - 1`, then `coeffs1` would be `[3, -2, 5, -1]`
     :type coeffs1: List
-    :param degree: The degree of the polynomial, which is the highest power of the variable in the polynomial. For example, if the polynomial is 3x^2 + 2x + 1, then the degree is 2
+    :param degree: The degree of the polynomial, which is the highest power of the variable
+                   in the polynomial. For example, if the polynomial is 3x^2 + 2x + 1,
+                   then the degree is 2
     :type degree: int
-    :param alpha: The value of alpha is a constant that is used in the Horner's method for backward polynomial evaluation. It is typically a scalar value
+    :param alpha: The value of alpha is a constant that is used in the Horner's method for
+                  backward polynomial evaluation. It is typically a scalar value
     :type alpha: complex
-    :return: The function `horner_backward` returns the value of the polynomial evaluated at the given alpha value.
+    :return: The function `horner_backward` returns the value of the polynomial evaluated at
+             the given alpha value.
 
     Examples:
         >>> coeffs = [1.0, -6.7980, 2.9948, -0.043686, 0.000089248]
@@ -72,15 +95,17 @@ def initial_aberth(coeffs: Sequence[float]) -> List[complex]:
     Calculates center from polynomial coefficients and radius from evaluation at center.
     Uses low-discrepancy sequence (Circle generator) for even angular distribution.
 
-    The `initial_aberth` function calculates the initial guesses for the roots of a polynomial using the
-    Aberth method. It computes a center point based on the polynomial coefficients and then
-    distributes initial guesses evenly around a circle centered at this point. The radius
-    is determined by evaluating the polynomial at the center point and taking the nth root.
+    The `initial_aberth` function calculates the initial guesses for the roots of a polynomial
+    using the Aberth method. It computes a center point based on the polynomial coefficients
+    and then distributes initial guesses evenly around a circle centered at this point. The
+    radius is determined by evaluating the polynomial at the center point and taking the nth
+    root.
 
     :param coeffs: The `coeffs` parameter is a list of coefficients of a polynomial. Each
-                   element in the list represents the coefficient of a term in the polynomial, starting
-                   from the highest degree term down to the constant term. For example, if the polynomial is
-                   `3x^3 - 2x^2 + 5x - 1`, then `coeffs` would be `[3, -2, 5, -1]`
+                   element in the list represents the coefficient of a term in the polynomial,
+                   starting from the highest degree term down to the constant term. For example,
+                   if the polynomial is `3x^3 - 2x^2 + 5x - 1`, then `coeffs` would be
+                   `[3, -2, 5, -1]`
     :type coeffs: List[float]
     :return: The function `initial_aberth` returns a list of complex numbers.
 
@@ -193,8 +218,8 @@ def aberth(
     coeffs: Sequence[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
     r"""Core implementation of Aberth's root-finding algorithm.
-    Iteratively improves root estimates using polynomial evaluations and derivative approximations.
-    Convergence is achieved when all residuals fall below specified tolerance.
+    Iteratively improves root estimates using polynomial evaluations and derivative
+    approximations. Convergence is achieved when all residuals fall below specified tolerance.
 
     The `aberth` function implements Aberth's method for polynomial root-finding. It works by:
     1. Evaluating the polynomial and its derivative at each current root estimate
@@ -203,21 +228,26 @@ def aberth(
     4. Repeating until convergence or maximum iterations reached
 
     :param coeffs: The `coeffs` parameter is a list of coefficients of a polynomial. The
-                   coefficients are ordered from highest degree to lowest degree. For example, if the
-                   polynomial is `3x^2 + 2x + 1`, then the `coeffs` list would be `[3, 2, 1]`
+                   coefficients are ordered from highest degree to lowest degree. For example,
+                   if the polynomial is `3x^2 + 2x + 1`, then the `coeffs` list would be
+                   `[3, 2, 1]`
     :type coeffs: List[float]
     :param zs: The `zs` parameter in the `aberth` function represents the initial guesses for
-               the roots of the polynomial. It is a list of complex numbers. Each complex number represents
-               an initial guess for a root of the polynomial
+               the roots of the polynomial. It is a list of complex numbers. Each complex
+               number represents an initial guess for a root of the polynomial
     :type zs: List[complex]
-    :param options: The `options` parameter is an instance of the `Options` class, which contains
-                    various options for the Aberth's method algorithm. It is an optional parameter, and if not
-                    provided, it will default to an instance of the `Options` class with default values
+    :param options: The `options` parameter is an instance of the `Options` class, which
+                    contains various options for the Aberth's method algorithm. It is an optional
+                    parameter, and if not provided, it will default to an instance of the
+                    `Options` class with default values
     :type options: Options
     :return: The function `aberth` returns a tuple containing three elements:
-               1. `zs`: a list of complex numbers representing the approximate roots of the polynomial.
-               2. `niter`: an integer representing the number of iterations performed by Aberth's method.
-               3. `found`: a boolean value indicating whether the roots were found within the specified tolerance.
+               1. `zs`: a list of complex numbers representing the approximate roots of the
+                  polynomial.
+               2. `niter`: an integer representing the number of iterations performed by
+                  Aberth's method.
+               3. `found`: a boolean value indicating whether the roots were found within the
+                  specified tolerance.
 
     .. svgbob::
 
