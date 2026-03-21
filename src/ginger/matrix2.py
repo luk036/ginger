@@ -1,11 +1,42 @@
-from .vector2 import Vector2
+"""2x2 matrix operations for polynomial root-finding algorithms.
 
+This module provides the Matrix2 class which represents a 2x2 matrix with two
+Vector2 objects as rows. It is primarily used in Bairstow's method for computing
+the adjustments to root estimates via matrix-vector operations and determinant
+calculations.
+
+The matrix is stored in row-major order:
+    [[x.x, x.y],
+     [y.x, y.y]]
+
+Example:
+    >>> from ginger.vector2 import Vector2
+    >>> m = Matrix2(Vector2(1.0, 2.0), Vector2(3.0, 4.0))
+    >>> print(m.det())
+    -2.0
 """
-The Matrix2 class represents a 2x2 matrix with two Vector2 objects as its rows.
-"""
+
+from .vector2 import Vector2
 
 
 class Matrix2:
+    """A 2x2 matrix class for linear algebra operations.
+
+    This class represents a 2x2 matrix where each row is a Vector2 object.
+    It provides essential matrix operations used in polynomial root-finding
+    algorithms, including matrix-vector multiplication and determinant calculation.
+
+    Attributes:
+        x (Vector2): The first row of the matrix.
+        y (Vector2): The second row of the matrix.
+
+    Example:
+        >>> m = Matrix2(Vector2(1.0, 2.0), Vector2(3.0, 4.0))
+        >>> print(m.mdot(Vector2(5.0, 6.0)))
+        <17.0, 39.0>
+        >>> print(m.det())
+        -2.0
+    """
     _x: Vector2
     _y: Vector2
 
