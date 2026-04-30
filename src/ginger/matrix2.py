@@ -37,6 +37,7 @@ class Matrix2:
         >>> print(m.det())
         -2.0
     """
+
     _x: Vector2
     _y: Vector2
 
