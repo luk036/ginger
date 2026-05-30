@@ -1,3 +1,5 @@
+import pytest
+
 from ginger.aberth import (
     aberth,
     aberth_autocorr,
@@ -7,6 +9,9 @@ from ginger.aberth import (
     initial_aberth_autocorr,
     initial_aberth_autocorr_orig,
     initial_aberth_orig,
+    leja_order,
+    poly_from_autocorr_roots,
+    poly_from_roots,
 )
 from ginger.rootfinding import Options
 
@@ -271,3 +276,76 @@ def test_aberth_autocorr_fir() -> None:
 #     print([niter, found])
 #     print([z for z in zs])
 #     assert niter <= 12
+
+
+def test_leja_order_empty() -> None:
+    assert leja_order([]) == []
+
+
+def test_leja_order_single() -> None:
+    ordered = leja_order([3.0 + 4.0j])
+    assert ordered == [3.0 + 4.0j]
+
+
+def test_leja_order_preserves_set() -> None:
+    pts = [3.0 + 1.0j, 1.0 + 2.0j, 0.5 + 0.5j, -2.0 - 1.0j]
+    ordered = leja_order(pts)
+    assert len(ordered) == len(pts)
+    assert set(ordered) == set(pts)
+
+
+def test_leja_order_smallest_first() -> None:
+    pts = [10.0 + 0.0j, 0.5 + 0.0j, 3.0 + 0.0j]
+    ordered = leja_order(pts)
+    assert ordered[0] == 0.5 + 0.0j
+
+
+def test_poly_from_roots_known() -> None:
+    coeffs = poly_from_roots([1.0 + 0.0j, -1.0 + 0.0j])
+    assert coeffs == [1.0, 0.0, -1.0]
+
+
+def test_poly_from_roots_complex_conj() -> None:
+    coeffs = poly_from_roots([0.0 + 1.0j, 0.0 - 1.0j])
+    assert coeffs == [1.0, 0.0, 1.0]
+
+
+def test_poly_from_roots_triple() -> None:
+    coeffs = poly_from_roots([0.0 + 0.0j, 1.0 + 0.0j, -1.0 + 0.0j])
+    assert coeffs == [1.0, 0.0, -1.0, 0.0]
+
+
+def test_poly_from_roots_empty() -> None:
+    assert poly_from_roots([]) == [1.0]
+
+
+def test_poly_from_roots_aberth_reconstruction() -> None:
+    h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
+    zs = initial_aberth(h)
+    opt = Options()
+    opt.tolerance = 1e-12
+    zs, niter, found = aberth(h, zs, opt)
+    assert found
+    monic = poly_from_roots(zs)
+    assert len(monic) == len(h)
+    scale = h[0]
+    for i in range(len(h)):
+        assert monic[i] * scale == pytest.approx(h[i], abs=1e-8)
+
+
+def test_poly_from_autocorr_roots_empty() -> None:
+    assert poly_from_autocorr_roots([]) == [1.0]
+
+
+def test_poly_from_autocorr_roots_reconstruction() -> None:
+    h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
+    zs = initial_aberth_autocorr(h)
+    opt = Options()
+    opt.tolerance = 1e-12
+    zs, niter, found = aberth_autocorr(h, zs, opt)
+    assert found
+    monic = poly_from_autocorr_roots(zs)
+    assert len(monic) == len(h)
+    scale = h[0]
+    for i in range(len(h)):
+        assert monic[i] * scale == pytest.approx(h[i], abs=1e-8)

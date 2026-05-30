@@ -106,6 +106,38 @@ def pbairstow_autocorr(
     return vrs, options.max_iters, False
 
 
+def poly_from_autocorr_factors(vrs: List[Vector2]) -> List[float]:
+    """
+    Reconstruct a monic polynomial from autocorrelation quadratic factors.
+
+    Each quadratic factor x^2 - r*x - q contributes 2 roots. For palindromic
+    polynomials, the reciprocal of each root is also a root. This function
+    extracts all roots, adds reciprocals, then reconstructs with Leja ordering.
+
+    :param vrs: Quadratic factors from pbairstow_autocorr
+    :return: Monic polynomial coefficients (highest degree first)
+
+    Examples:
+        >>> vrs = [Vector2(0.0, 1.0)]  # x^2 - 1 => roots 1, -1 => +reciprocals
+        >>> coeffs = poly_from_autocorr_factors(vrs)
+        >>> len(coeffs)
+        5
+    """
+    if not vrs:
+        return [1.0]
+    from .aberth import poly_from_roots
+    from .rootfinding import roots_from_quadratic
+
+    all_roots: List[complex] = []
+    for vr in vrs:
+        r1, r2 = roots_from_quadratic(vr)
+        all_roots.append(r1)
+        all_roots.append(r2)
+        all_roots.append(1.0 / r1)
+        all_roots.append(1.0 / r2)
+    return poly_from_roots(all_roots)
+
+
 def extract_autocorr(vr: Vector2) -> Vector2:
     """
     Normalizes quadratic factors to ensure roots within unit circle.

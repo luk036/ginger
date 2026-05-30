@@ -42,13 +42,11 @@ roots are complex numbers. It's designed to be efficient and accurate, making it
 applications that require finding roots of high-degree polynomials.
 """
 
-import math
 from functools import reduce
 from itertools import accumulate
-from math import cos, sqrt
+from math import sqrt
 from typing import Any, List, Sequence, Tuple, Union
 
-from lds_gen.lds import VdCorput
 from mywheel.robin import Robin
 
 from .matrix2 import Matrix2
@@ -332,9 +330,9 @@ def initial_guess(coeffs: List[float]) -> List[Vector2]:
     degree //= 2
     degree *= 2  # make even
 
-    vgen = VdCorput(2)
-    vgen.reseed(1)
-    temp = iter(radius * cos(math.pi * vgen.pop()) for _ in range(1, degree, 2))
+    from .aberth import COS_PI_VDC2_TABLE
+
+    temp = iter(radius * COS_PI_VDC2_TABLE[i + 1] for i in range(0, degree // 2))
     return [Vector2(2 * (center + t), -(quad_term + 2 * center * t)) for t in temp]
 
 
@@ -414,6 +412,58 @@ def pbairstow_even(
         if tolerance < options.tolerance:
             return vrs, niter, True
     return vrs, options.max_iters, False
+
+
+def roots_from_quadratic(vr: Vector2) -> Tuple[complex, complex]:
+    """
+    Extract the two roots of a quadratic factor x^2 - r*x - q = 0.
+
+    :param vr: Vector2 with x=r, y=q representing x^2 - r*x - q
+    :return: The two roots (may be real or complex conjugate pair)
+
+    Examples:
+        >>> r1, r2 = roots_from_quadratic(Vector2(0, 1))
+        >>> abs(r1 - 1j) < 1e-14
+        True
+        >>> abs(r2 + 1j) < 1e-14
+        True
+    """
+    r = vr.x
+    q = vr.y
+    disc = r * r + 4.0 * q
+    if disc >= 0.0:
+        sqrt_disc = sqrt(disc)
+        return ((r + sqrt_disc) / 2.0, (r - sqrt_disc) / 2.0)
+    sqrt_disc = sqrt(-disc)
+    return (complex(r / 2.0, sqrt_disc / 2.0), complex(r / 2.0, -sqrt_disc / 2.0))
+
+
+def poly_from_quadratic_factors(vrs: List[Vector2]) -> List[float]:
+    """
+    Reconstruct a monic polynomial from its quadratic factors.
+
+    Each factor x^2 - r*x - q is converted to its roots, then all roots are
+    reconstructed with Leja ordering via poly_from_roots.
+
+    :param vrs: Quadratic factors from Bairstow's method
+    :return: Monic polynomial coefficients (highest degree first)
+
+    Examples:
+        >>> vrs = [Vector2(0.0, 1.0)]  # x^2 - 1
+        >>> coeffs = poly_from_quadratic_factors(vrs)
+        >>> coeffs
+        [1.0, 0.0, -1.0]
+    """
+    if not vrs:
+        return [1.0]
+    from .aberth import poly_from_roots
+
+    all_roots: List[complex] = []
+    for vr in vrs:
+        r1, r2 = roots_from_quadratic(vr)
+        all_roots.append(r1)
+        all_roots.append(r2)
+    return poly_from_roots(all_roots)
 
 
 def find_rootq(vr: Vector2) -> Tuple[Num, Num]:

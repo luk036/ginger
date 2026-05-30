@@ -37,15 +37,32 @@ Aberth's method, with various optimizations and variations to handle different s
 
 import math
 from concurrent.futures import ThreadPoolExecutor
-from math import cos, sin
+from math import cos, pi, sin
 from typing import List, Sequence, Tuple, Union
 
-from lds_gen.lds import Circle
+from lds_gen.lds import TWO_PI, VdCorput
 
 from .rootfinding import Options, horner_eval, horner_eval_f
 
 Num = Union[float, complex]
 # from mywheel.robin import Robin
+
+# ---------------------------------------------------------------------------
+# Precomputed LDS tables (replaces runtime Circle/VdCorput generation)
+# ---------------------------------------------------------------------------
+TABLE_SIZE = 1000
+
+# VdCorput<2> sequence table (index 0 = first pop)
+_vgen = VdCorput(2)
+VDC_TABLE_2: List[float] = [_vgen.pop() for _ in range(TABLE_SIZE)]
+
+# Circle<2> table: each entry is (cos(theta), sin(theta))
+CIRCLE_TABLE_2: List[Tuple[float, float]] = [
+    (cos(v * TWO_PI), sin(v * TWO_PI)) for v in VDC_TABLE_2
+]
+
+# cos(pi * vdc) table (used by Bairstow initial_guess)
+COS_PI_VDC2_TABLE: List[float] = [cos(pi * v) for v in VDC_TABLE_2]
 
 
 def horner_backward(coeffs1: List, degree: int, alpha: complex) -> complex:
@@ -118,11 +135,10 @@ def initial_aberth(coeffs: Sequence[float]) -> List[complex]:
     poly_c: Num = horner_eval_f(coeffs, center)
     radius: float | complex = pow(-poly_c, 1.0 / degree)
     # radius: float = pow(abs(poly_c), 1.0 / degree)
-    c_gen = Circle(2)
     return [
         center + radius * complex(x, y)
-        for y, x in (c_gen.pop() for _ in range(degree))
-        #    ^------ Note!
+        for y, x in (CIRCLE_TABLE_2[i] for i in range(degree))
+        #    ^------ Note! swap y and x
     ]
 
 
@@ -322,10 +338,9 @@ def initial_aberth_autocorr(coeffs: Sequence[float]) -> List[complex]:
     # radius: float | complex = pow(-coeffs[-1], 1.0 / degree)
     if abs(radius) > 1.0:
         radius = 1.0 / radius
-    c_gen = Circle(2)
     return [
         center + radius * complex(x, y)
-        for y, x in (c_gen.pop() for _ in range(degree // 2))
+        for y, x in (CIRCLE_TABLE_2[i] for i in range(degree // 2))
     ]
 
 
@@ -494,3 +509,90 @@ def aberth_autocorr_mt(
                 return zs, niter, True
 
     return zs, options.max_iters, False
+
+
+def leja_order(points: List[complex]) -> List[complex]:
+    """
+    Greedy Leja ordering of complex points.
+
+    Starts with the smallest-magnitude point, then iteratively selects the
+    remaining point that maximizes the minimum Euclidean distance to all
+    already-selected points.
+
+    :param points: Input complex points
+    :return: Reordered points in Leja sequence
+
+    Examples:
+        >>> pts = [1+0j, -1+0j, 0+1j, 0-1j]
+        >>> ordered = leja_order(pts)
+        >>> len(ordered)
+        4
+    """
+    if not points:
+        return []
+    sorted_pts = sorted(points, key=abs)
+    result = [sorted_pts[0]]
+    remaining = sorted_pts[1:]
+    while remaining:
+        best_idx = 0
+        best_dist = -1.0
+        for i, p in enumerate(remaining):
+            min_dist = min(abs(p - q) for q in result)
+            if min_dist > best_dist:
+                best_dist = min_dist
+                best_idx = i
+        result.append(remaining.pop(best_idx))
+    return result
+
+
+def poly_from_roots(zs: List[complex]) -> List[float]:
+    """
+    Reconstruct a monic polynomial from its roots with Leja ordering.
+
+    Applies Leja ordering to the roots for numerical stability, then
+    convolves (x - r_i) factors to recover the monic polynomial coefficients.
+
+    :param zs: Roots of the polynomial
+    :return: Monic polynomial coefficients (highest degree first)
+
+    Examples:
+        >>> coeffs = poly_from_roots([1+0j, -1+0j])
+        >>> coeffs
+        [1.0, 0.0, -1.0]
+    """
+    ordered = leja_order(zs)
+    coeffs = [1.0 + 0.0j]
+    for z in ordered:
+        prev = coeffs[0]
+        for i in range(1, len(coeffs)):
+            old = coeffs[i]
+            coeffs[i] -= z * prev
+            prev = old
+        coeffs.append(-z * prev)
+    return [c.real for c in coeffs]
+
+
+def poly_from_autocorr_roots(zs: List[complex]) -> List[float]:
+    """
+    Reconstruct a monic polynomial from autocorrelation roots.
+
+    Auto-correlation (palindromic) polynomials have roots in reciprocal pairs.
+    This function adds the reciprocal of each root (1/z), then reconstructs
+    with Leja ordering via poly_from_roots.
+
+    :param zs: Roots from aberth_autocorr or aberth_autocorr_mt
+    :return: Monic polynomial coefficients (highest degree first)
+
+    Examples:
+        >>> zs = [0.5+0.5j, 0.5-0.5j]
+        >>> coeffs = poly_from_autocorr_roots(zs)
+        >>> len(coeffs)
+        5
+    """
+    if not zs:
+        return [1.0]
+    all_roots: List[complex] = []
+    for z in zs:
+        all_roots.append(z)
+        all_roots.append(1.0 / z)
+    return poly_from_roots(all_roots)

@@ -1,6 +1,11 @@
 import pytest
 
-from ginger.autocorr import extract_autocorr, initial_autocorr, pbairstow_autocorr
+from ginger.autocorr import (
+    extract_autocorr,
+    initial_autocorr,
+    pbairstow_autocorr,
+    poly_from_autocorr_factors,
+)
 from ginger.rootfinding import Options, find_rootq
 from ginger.vector2 import Vector2
 
@@ -90,3 +95,20 @@ def test_autocorr_individual_convergence() -> None:
     opts.tol_ind = 1e-1
     vrs, niter, found = pbairstow_autocorr(h, vr0s, opts)
     assert found is True
+
+
+def test_poly_from_autocorr_factors_empty() -> None:
+    assert poly_from_autocorr_factors([]) == [1.0]
+
+
+def test_poly_from_autocorr_factors_reconstruction() -> None:
+    h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
+    vrs = initial_autocorr(h)
+    opts = Options()
+    vrs, niter, found = pbairstow_autocorr(h, vrs, opts)
+    assert found
+    monic = poly_from_autocorr_factors(vrs)
+    assert len(monic) == len(h)
+    scale = h[0]
+    for i in range(len(h)):
+        assert monic[i] * scale == pytest.approx(h[i], abs=1e-8)

@@ -1,10 +1,13 @@
 from pytest import approx
 
 from ginger.rootfinding import (
+    Options,
     delta,
     find_rootq,
     initial_guess,
     pbairstow_even,
+    poly_from_quadratic_factors,
+    roots_from_quadratic,
     suppress,
 )
 from ginger.vector2 import Vector2
@@ -92,3 +95,59 @@ def test_find_rootq_negative_hr() -> None:
     roots = find_rootq(vr)
     assert -3.0 == approx(roots[0])
     assert -2.0 == approx(roots[1])
+
+
+def test_roots_from_quadratic_real() -> None:
+    r1, r2 = roots_from_quadratic(Vector2(0.0, 1.0))  # x^2 - 1
+    assert abs(r1 - 1.0) < 1e-14
+    assert abs(r2 + 1.0) < 1e-14
+
+
+def test_roots_from_quadratic_complex() -> None:
+    r1, r2 = roots_from_quadratic(Vector2(0.0, -1.0))  # x^2 + 1
+    assert abs(r1 - 1j) < 1e-14
+    assert abs(r2 + 1j) < 1e-14
+
+
+def test_poly_from_quadratic_factors_empty() -> None:
+    assert poly_from_quadratic_factors([]) == [1.0]
+
+
+def test_poly_from_quadratic_factors_single() -> None:
+    # x^2 - 1
+    coeffs = poly_from_quadratic_factors([Vector2(0.0, 1.0)])
+    assert coeffs == [1.0, 0.0, -1.0]
+
+
+def test_poly_from_quadratic_factors_two() -> None:
+    # (x^2 - 1)(x^2 - 4) = x^4 - 5x^2 + 4
+    coeffs = poly_from_quadratic_factors([Vector2(0.0, 1.0), Vector2(0.0, 4.0)])
+    assert coeffs[0] == approx(1.0)
+    assert coeffs[1] == approx(0.0)
+    assert coeffs[2] == approx(-5.0)
+    assert coeffs[3] == approx(0.0)
+    assert coeffs[4] == approx(4.0)
+
+
+def test_poly_from_quadratic_factors_general() -> None:
+    # (x^2 - 3x - 10)(x^2 + x - 2) = x^4 - 2x^3 - 15x^2 - 4x + 20
+    coeffs = poly_from_quadratic_factors([Vector2(3.0, 10.0), Vector2(-1.0, 2.0)])
+    assert coeffs[0] == approx(1.0)
+    assert coeffs[1] == approx(-2.0)
+    assert coeffs[2] == approx(-15.0)
+    assert coeffs[3] == approx(-4.0)
+    assert coeffs[4] == approx(20.0)
+
+
+def test_poly_from_quadratic_factors_reconstruction() -> None:
+    h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
+    vrs = initial_guess(h)
+    opt = Options()
+    opt.tolerance = 1e-12
+    vrs, niter, found = pbairstow_even(h, vrs, opt)
+    assert found
+    monic = poly_from_quadratic_factors(vrs)
+    assert len(monic) == len(h)
+    scale = h[0]
+    for i in range(len(h)):
+        assert monic[i] * scale == approx(h[i], abs=1e-8)
