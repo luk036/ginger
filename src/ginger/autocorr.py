@@ -1,3 +1,17 @@
+"""Bairstow root-finding specialized for autocorrelation (palindromic) polynomials.
+
+Autocorrelation polynomials have symmetric coefficients and roots that come in
+reciprocal conjugate pairs. The algorithms in this module exploit this structure
+by processing only half the roots and handling reciprocal pairs in the
+suppression step.
+
+Key functions:
+    pbairstow_autocorr  — parallel Bairstow solver for palindromic polynomials
+    initial_autocorr    — generate initial guesses with reciprocal root structure
+    extract_autocorr    — normalize quadratic factors to unit-circle roots
+    poly_from_autocorr_factors — reconstruct polynomial from autocorr factors
+"""
+
 from math import cos, pi, sqrt
 from typing import List, Tuple
 
@@ -9,15 +23,14 @@ from .vector2 import Vector2
 
 def initial_autocorr(coeffs: List[float]) -> List[Vector2]:
     """
-    Calculates initial guesses for autocorrelation roots using coefficient analysis.
+    Generate initial quadratic-factor estimates for autocorrelation polynomials.
 
-    The method:
-    1. Computes a root radius estimate from the constant term
-    2. Adjusts radius to focus on roots outside unit circle
-    3. Generates initial guesses using cosine spaced angles with quadratic terms
+    Computes radius from the constant term, adjusts to focus on roots outside
+    the unit circle, and generates estimates with cosine-spaced angular
+    distribution.
 
-    :param coeffs: Polynomial coefficients from highest to lowest degree
-    :return: List of Vector2 representing quadratic factors (x² - rx - q)
+    :param coeffs: Polynomial coefficients in descending order
+    :return: Initial quadratic factors as Vector2 (r,q)
 
     Examples:
         >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
@@ -43,18 +56,15 @@ def pbairstow_autocorr(
     coeffs: List[float], vrs: List[Vector2], options: Options = Options()
 ) -> Tuple[List[Vector2], int, bool]:
     """
-    Implements Bairstow's method for polynomial root finding with autocorrelation.
+    Parallel Bairstow method for autocorrelation (palindromic) polynomials.
 
-    Process outline:
-    1. Iterates until convergence or max iterations
-    2. Evaluates polynomial and first derivative using Horner's scheme
-    3. Suppresses interference from other roots
-    4. Updates estimates using Newton-Raphson step
+    Handles reciprocal root pairs by applying suppression against both each
+    root factor and its reciprocal.
 
     :param coeffs: Polynomial coefficients (degree must be even)
-    :param vrs: Initial guesses for quadratic factors
+    :param vrs: Initial quadratic factor estimates
     :param options: Algorithm control parameters
-    :return: Tuple of (updated factors, iterations, convergence status)
+    :return: Tuple of (updated factors, iterations, converged)
 
     Examples:
         >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
@@ -110,9 +120,9 @@ def poly_from_autocorr_factors(vrs: List[Vector2]) -> List[float]:
     """
     Reconstruct a monic polynomial from autocorrelation quadratic factors.
 
-    Each quadratic factor x^2 - r*x - q contributes 2 roots. For palindromic
-    polynomials, the reciprocal of each root is also a root. This function
-    extracts all roots, adds reciprocals, then reconstructs with Leja ordering.
+    Extracts all roots from each quadratic factor, adds reciprocals (for the
+    palindromic structure), then reconstructs via :func:`aberth.poly_from_roots`
+    with Leja ordering.
 
     :param vrs: Quadratic factors from pbairstow_autocorr
     :return: Monic polynomial coefficients (highest degree first)
@@ -140,15 +150,13 @@ def poly_from_autocorr_factors(vrs: List[Vector2]) -> List[float]:
 
 def extract_autocorr(vr: Vector2) -> Vector2:
     """
-    Normalizes quadratic factors to ensure roots within unit circle.
+    Normalize quadratic factors to keep roots within the unit circle.
 
-    Strategy:
-    1. Calculate roots of quadratic x² - rx - q
-    2. If roots are outside unit circle, take reciprocals
-    3. Return new quadratic with roots inside unit circle
+    Computes the roots of x² - r·x - q and takes reciprocals for any root
+    outside the unit circle, producing a new quadratic with stable roots.
 
-    :param vr: Vector2 representing quadratic coefficients (r, q)
-    :return: Normalized Vector2 with roots inside unit circle
+    :param vr: Quadratic coefficients (r, q)
+    :return: Normalized quadratic with |roots| ≤ 1
 
     Examples:
         >>> vr = Vector2(5, -6)

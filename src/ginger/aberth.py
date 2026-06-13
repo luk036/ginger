@@ -1,38 +1,22 @@
 """
-Aberth's Method for Polynomial Root Finding
+Aberth-Ehrlich method for simultaneous polynomial root-finding.
 
-This code implements Aberth's method, which is an algorithm for finding the roots of
-polynomials. In simple terms, it's a way to solve equations like x^3 + 2x^2 - 5x + 3 = 0,
-finding the values of x that make the equation true.
+Aberth's method (Ehrlich, 1967; Aberth, 1973) combines Newton's method with an
+implicit deflation strategy to compute all roots of a polynomial simultaneously
+with cubic convergence. The correction formula is:
 
-The main input for this code is a list of coefficients that represent a polynomial. For example,
-[1, 2, -5, 3] would represent the polynomial x^3 + 2x^2 - 5x + 3. The code also takes initial
-guesses for where the roots might be.
+    zᵢ' = zᵢ - P(zᵢ) / P'(zᵢ)
 
-The output is a list of complex numbers that represent the roots of the polynomial. These are the
-solutions to the equation. The code also returns the number of iterations it took to find the
-roots and whether it was successful in finding them within the specified tolerance.
+    P'(zᵢ) = P₁(zᵢ) - Σⱼ₌ᵢ P(zᵢ) / (zᵢ - zⱼ)
 
-To achieve its purpose, the code uses an iterative process. It starts with initial guesses for the
-roots and then repeatedly improves these guesses until they're close enough to the actual roots.
-The main algorithm, Aberth's method, is implemented in the aberth function. This function uses a
-clever mathematical formula to update each guess based on the current polynomial value and its
-derivative at that point, as well as the positions of all the other guesses.
+where P₁(z) is the derivative of P(z).
 
-The code includes several variations of the algorithm. There's a basic version (aberth), a
-multithreaded version for faster computation (aberth_mt), and versions that use autocorrelation
-(aberth_autocorr and aberth_autocorr_mt). These autocorrelation versions are designed to work
-better for certain types of polynomials.
-
-An important part of the process is finding good initial guesses for the roots. The code includes
-several functions for this, like initial_aberth and initial_aberth_autocorr. These functions use
-mathematical insights about where roots are likely to be located to make educated guesses.
-
-The code also includes helper functions like horner_eval and horner_backward which are efficient
-ways to evaluate polynomials and their derivatives.
-
-Overall, this code provides a comprehensive toolkit for finding the roots of polynomials using
-Aberth's method, with various optimizations and variations to handle different scenarios efficiently.
+This module provides:
+    aberth              — single-threaded Aberth method
+    aberth_mt           — multithreaded version
+    aberth_autocorr     — variant for autocorrelation (palindromic) polynomials
+    initial_aberth      — LDS-based initial guess generation
+    poly_from_roots     — reconstruct polynomial from roots (Leja ordering)
 """
 
 import math
@@ -67,28 +51,15 @@ COS_PI_VDC2_TABLE: List[float] = [cos(pi * v) for v in VDC_TABLE_2]
 
 def horner_backward(coeffs1: List, degree: int, alpha: complex) -> complex:
     """
-    Backward polynomial evaluation using Horner's method for root refinement.
-    Evaluates polynomial at x=α using coefficients in reverse order.
-    This implementation modifies coefficients in-place for efficiency.
+    Backward Horner evaluation for root refinement.
 
-    The `horner_backward` function evaluates a polynomial using the Horner's method in
-    backward form. This is particularly useful for root refinement in iterative methods like
-    Aberth's. It works by transforming the polynomial coefficients to center them around α,
-    which helps in accurately evaluating the polynomial and its derivatives at α.
+    Evaluates polynomial at x = α using coefficients in reverse order,
+    modifying them in-place to center around α.
 
-    :param coeffs1: The parameter `coeffs1` is a list of coefficients of a polynomial in
-                    descending order of degree. For example, if the polynomial is
-                    `3x^3 - 2x^2 + 5x - 1`, then `coeffs1` would be `[3, -2, 5, -1]`
-    :type coeffs1: List
-    :param degree: The degree of the polynomial, which is the highest power of the variable
-                   in the polynomial. For example, if the polynomial is 3x^2 + 2x + 1,
-                   then the degree is 2
-    :type degree: int
-    :param alpha: The value of alpha is a constant that is used in the Horner's method for
-                  backward polynomial evaluation. It is typically a scalar value
-    :type alpha: complex
-    :return: The function `horner_backward` returns the value of the polynomial evaluated at
-             the given alpha value.
+    :param coeffs1: Polynomial coefficients in descending order (modified in-place)
+    :param degree: Degree of the polynomial
+    :param alpha: Center point for evaluation
+    :return: Value of the polynomial at α
 
     Examples:
         >>> coeffs = [1.0, -6.7980, 2.9948, -0.043686, 0.000089248]
@@ -108,23 +79,14 @@ def horner_backward(coeffs1: List, degree: int, alpha: complex) -> complex:
 
 def initial_aberth(coeffs: Sequence[float]) -> List[complex]:
     """
-    Generates initial root guesses using geometric distribution around a center point.
-    Calculates center from polynomial coefficients and radius from evaluation at center.
-    Uses low-discrepancy sequence (Circle generator) for even angular distribution.
+    Generate initial root guesses using a low-discrepancy sequence.
 
-    The `initial_aberth` function calculates the initial guesses for the roots of a polynomial
-    using the Aberth method. It computes a center point based on the polynomial coefficients
-    and then distributes initial guesses evenly around a circle centered at this point. The
-    radius is determined by evaluating the polynomial at the center point and taking the nth
-    root.
+    Distributes guesses around a circle whose center and radius are derived
+    from polynomial coefficients. Uses a van der Corput sequence for even
+    angular distribution.
 
-    :param coeffs: The `coeffs` parameter is a list of coefficients of a polynomial. Each
-                   element in the list represents the coefficient of a term in the polynomial,
-                   starting from the highest degree term down to the constant term. For example,
-                   if the polynomial is `3x^3 - 2x^2 + 5x - 1`, then `coeffs` would be
-                   `[3, -2, 5, -1]`
-    :type coeffs: List[float]
-    :return: The function `initial_aberth` returns a list of complex numbers.
+    :param coeffs: Polynomial coefficients in descending order
+    :return: Initial root guesses as complex numbers
 
     Examples:
         >>> h = [5.0, 2.0, 9.0, 6.0, 2.0]
@@ -144,21 +106,13 @@ def initial_aberth(coeffs: Sequence[float]) -> List[complex]:
 
 def initial_aberth_orig(coeffs: Sequence[float]) -> List[complex]:
     """
-    Original implementation of initial guess generation using trigonometric distribution.
-    Places roots equally spaced around a circle with calculated radius and center.
-    Includes angular offset of 0.25 to avoid alignment with coordinate axes.
+    Original trigonometric initial guess generator.
 
-    The function `initial_aberth_orig` calculates the initial approximations for the roots of a
-    polynomial using the Aberth method. This version uses trigonometric functions to distribute
-    the initial guesses evenly around a circle, with a small angular offset to prevent roots
-    from aligning with the coordinate axes.
+    Places roots equally spaced around a circle with angular offset of 0.25
+    radians to avoid alignment with coordinate axes.
 
-    :param coeffs: The `coeffs` parameter is a list of coefficients of a polynomial. Each
-                   element in the list represents the coefficient of a term in the polynomial, starting
-                   from the highest degree term down to the constant term. For example, if the polynomial
-                   is `3x^3 - 2x^2 + 5x - 1`, then `coeffs` would be `[3, -2, 5, -1]`
-    :type coeffs: List[float]
-    :return: The function `initial_aberth_orig` returns a list of complex numbers.
+    :param coeffs: Polynomial coefficients in descending order
+    :return: Initial root guesses as complex numbers
 
     Examples:
         >>> h = [5.0, 2.0, 9.0, 6.0, 2.0]
@@ -179,22 +133,15 @@ def aberth_mt(
     coeffs: Sequence[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
     """
-    Multithreaded implementation of Aberth's method.
-    Uses ThreadPoolExecutor to parallelize root updates across available CPUs.
-    Maintains convergence checking in main thread while parallelizing computations.
+    Multithreaded Aberth method using ThreadPoolExecutor.
 
-    This function implements Aberth's method for finding polynomial roots using multiple threads.
-    Each root update is performed in parallel, which can significantly speed up computation
-    for high-degree polynomials. The function maintains the same mathematical operations as
-    the single-threaded version but distributes the workload across available processors.
+    Parallelizes root updates across available CPUs while checking convergence
+    in the main thread.
 
-    :param coeffs: List of polynomial coefficients in descending order of degree
-    :param zs: Initial guesses for the roots (complex numbers)
-    :param options: Configuration options including max iterations and tolerance
-    :return: Tuple containing:
-             - List of refined roots
-             - Number of iterations performed
-             - Boolean indicating whether convergence was achieved
+    :param coeffs: Polynomial coefficients in descending order
+    :param zs: Initial root guesses
+    :param options: Algorithm configuration
+    :return: Tuple of (refined roots, iterations, converged)
     """
 
     def aberth_job(
@@ -233,37 +180,28 @@ def aberth_mt(
 def aberth(
     coeffs: Sequence[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
-    r"""Core implementation of Aberth's root-finding algorithm.
-    Iteratively improves root estimates using polynomial evaluations and derivative
-    approximations. Convergence is achieved when all residuals fall below specified tolerance.
+    r"""Core Aberth-Ehrlich root-finding algorithm (single-threaded).
 
-    The `aberth` function implements Aberth's method for polynomial root-finding. It works by:
-    1. Evaluating the polynomial and its derivative at each current root estimate
-    2. Adjusting each estimate based on the ratio of polynomial value to derivative
-    3. Including correction terms from all other root estimates
-    4. Repeating until convergence or maximum iterations reached
+    Iteratively improves root estimates using the correction formula:
 
-    :param coeffs: The `coeffs` parameter is a list of coefficients of a polynomial. The
-                   coefficients are ordered from highest degree to lowest degree. For example,
-                   if the polynomial is `3x^2 + 2x + 1`, then the `coeffs` list would be
-                   `[3, 2, 1]`
-    :type coeffs: List[float]
-    :param zs: The `zs` parameter in the `aberth` function represents the initial guesses for
-               the roots of the polynomial. It is a list of complex numbers. Each complex
-               number represents an initial guess for a root of the polynomial
-    :type zs: List[complex]
-    :param options: The `options` parameter is an instance of the `Options` class, which
-                    contains various options for the Aberth's method algorithm. It is an optional
-                    parameter, and if not provided, it will default to an instance of the
-                    `Options` class with default values
-    :type options: Options
-    :return: The function `aberth` returns a tuple containing three elements:
-               1. `zs`: a list of complex numbers representing the approximate roots of the
-                  polynomial.
-               2. `niter`: an integer representing the number of iterations performed by
-                  Aberth's method.
-               3. `found`: a boolean value indicating whether the roots were found within the
-                  specified tolerance.
+    .. svgbob::
+
+                     P(zᵢ)
+          zᵢ' = zᵢ - ──────
+                     P'(zᵢ)
+
+    where
+                                   n
+                                .-----.
+                                 \      P(zᵢ)
+          P'(zᵢ) = P₁(zᵢ) -       /    ────────
+                                '-----' zᵢ - zⱼ
+                                  j≠i
+
+    :param coeffs: Polynomial coefficients in descending order
+    :param zs: Initial root guesses
+    :param options: Algorithm configuration
+    :return: Tuple of (final roots, iterations performed, converged)
 
     .. svgbob::
 
@@ -312,20 +250,13 @@ def aberth(
 
 def initial_aberth_autocorr(coeffs: Sequence[float]) -> List[complex]:
     """
-    Generates initial guesses for autocorrelation polynomials.
-    Special case handling for polynomials with reciprocal root pairs.
-    Adjusts radius to ensure roots stay within unit circle when possible.
+    Generate initial guesses for autocorrelation (palindromic) polynomials.
 
-    The function `initial_aberth_autocorr` calculates the initial values for the Aberth method for
-    finding the roots of a polynomial. This version is specialized for autocorrelation polynomials,
-    which have symmetric root structures (roots come in reciprocal conjugate pairs). It ensures
-    the initial guesses are within the unit circle when possible.
+    Adjusts radius to keep initial guesses within the unit circle, matching
+    the reciprocal-root structure of autocorrelation polynomials.
 
-    :param coeffs: The `coeffs` parameter is a list of coefficients of a polynomial. The coefficients
-                   are ordered from highest degree to lowest degree. For example, if the polynomial
-                   is `3x^2 + 2x + 1`, then the `coeffs` list would be `[3, 2, 1]`
-    :type coeffs: List[float]
-    :return: The function `initial_aberth_autocorr` returns a list of complex numbers.
+    :param coeffs: Polynomial coefficients in descending order
+    :return: Initial root guesses
 
     Examples:
         >>> h = [5.0, 2.0, 9.0, 6.0, 2.0]
@@ -346,20 +277,10 @@ def initial_aberth_autocorr(coeffs: Sequence[float]) -> List[complex]:
 
 def initial_aberth_autocorr_orig(coeffs: Sequence[float]) -> List[complex]:
     """
-    Original trigonometric implementation for autocorrelation polynomials.
-    Generates initial guesses on a circle with angular spacing considering reciprocal roots.
-    Particularly suited for polynomials with symmetric root structures.
+    Original trigonometric initial guess generator for autocorrelation polynomials.
 
-    The function `initial_aberth_autocorr_orig` calculates the initial guesses for the roots of a
-    polynomial using the Aberth method. This version uses trigonometric functions to distribute
-    the initial guesses and is specialized for autocorrelation polynomials, which have symmetric
-    root structures (roots come in reciprocal conjugate pairs).
-
-    :param coeffs: The `coeffs` parameter is a list of coefficients of a polynomial. The
-                   coefficients are ordered from highest degree to lowest degree. For example, if the polynomial
-                   is `3x^2 + 2x + 1`, then the `coeffs` list would be `[3, 2, 1]`
-    :type coeffs: List[float]
-    :return: The function `initial_aberth_autocorr_orig` returns a list of complex numbers.
+    :param coeffs: Polynomial coefficients in descending order
+    :return: Initial root guesses
 
     Examples:
         >>> h = [5.0, 2.0, 9.0, 6.0, 2.0]
@@ -384,29 +305,15 @@ def aberth_autocorr(
     coeffs: Sequence[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
     """
-    Aberth's method variant for autocorrelation polynomials.
-    Accounts for reciprocal root pairs (z and 1/z̄) in derivative calculation.
-    Particularly useful for polynomials with symmetric coefficient structures.
+    Aberth method variant for autocorrelation (palindromic) polynomials.
 
-    The `aberth_autocorr` function implements the Aberth method for finding the roots of a polynomial
-    using autocorrelation. This version is specialized for polynomials where roots come in
-    reciprocal conjugate pairs (common in signal processing applications). It modifies the
-    standard Aberth method to account for these symmetric root structures.
+    Accounts for reciprocal root pairs (z and 1/z̄) in the derivative correction,
+    suitable for polynomials with symmetric coefficient structures.
 
-    :param coeffs: The `coeffs` parameter is a list of coefficients of a polynomial. The coefficients
-                   are ordered from highest degree to lowest degree. For example, if the polynomial
-                   is `3x^2 + 2x + 1`, then the `coeffs` list would be `[3, 2, 1]`
-    :type coeffs: List[float]
-    :param zs: The `zs` parameter is a list of complex numbers. It represents the
-               initial guesses for the roots of a polynomial
-    :type zs: List[complex]
-    :param options: The `options` parameter is an instance of the `Options` class, which contains
-                    various options for the algorithm. It is an optional parameter and if not provided, it will
-                    default to an instance of the `Options` class with default values
-    :return: The function `aberth_autocorr` returns a tuple containing the following elements:
-             - List of refined roots
-             - Number of iterations performed
-             - Boolean indicating whether convergence was achieved
+    :param coeffs: Polynomial coefficients in descending order
+    :param zs: Initial root guesses
+    :param options: Algorithm configuration
+    :return: Tuple of (refined roots, iterations, converged)
 
     Examples:
         >>> h = [5.0, 2.0, 9.0, 6.0, 2.0]
@@ -440,22 +347,15 @@ def aberth_autocorr_job(
     zsc: List[complex],
 ) -> Tuple[float, int, complex]:
     """
-    Worker function for multithreaded autocorrelation Aberth method.
-    Handles individual root updates while considering reciprocal root pairs.
-    Returns updated root estimate along with its residual for convergence checking.
+    Worker for multithreaded autocorrelation Aberth — updates a single root.
 
-    This function performs the core calculations for a single root in the multithreaded
-    autocorrelation version of Aberth's method. It evaluates the polynomial and its
-    derivative at the current root estimate, applies corrections for all other roots
-    and their reciprocals, and returns the updated root estimate.
+    Evaluates polynomial and derivative at zi, applies corrections from all
+    other roots and their reciprocals, returns the updated value.
 
-    :param coeffs: Polynomial coefficients in descending order of degree
-    :param i: Index of the root being processed
-    :param zsc: Current list of root estimates (complex numbers)
-    :return: Tuple containing:
-             - Residual (absolute value of polynomial at current estimate)
-             - Index of the root being processed
-             - New root estimate
+    :param coeffs: Polynomial coefficients in descending order
+    :param i: Index of the root to update
+    :param zsc: Current list of root estimates
+    :return: Tuple of (residual at zi, root index, new root estimate)
     """
     zi = zsc[i]
     p_eval, coeffs1 = horner_eval(coeffs, zi)
@@ -473,23 +373,15 @@ def aberth_autocorr_mt(
     coeffs: Sequence[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
     """
-    Multithreaded version of autocorrelation Aberth's method.
-    Parallelizes root updates across multiple threads for improved performance.
-    Maintains thread safety by keeping root updates in separate jobs.
+    Multithreaded autocorrelation Aberth method.
 
-    This function implements the autocorrelation version of Aberth's method using multiple
-    threads. Each root update is performed in parallel, which can significantly speed up
-    computation for high-degree polynomials. The function maintains the same mathematical
-    operations as the single-threaded version but distributes the workload across available
-    processors.
+    Parallelizes root updates across threads, accounting for reciprocal root
+    pairs in the correction step.
 
-    :param coeffs: List of polynomial coefficients in descending order of degree
-    :param zs: Initial guesses for the roots (complex numbers)
-    :param options: Configuration options including max iterations and tolerance
-    :return: Tuple containing:
-             - List of refined roots
-             - Number of iterations performed
-             - Boolean indicating whether convergence was achieved
+    :param coeffs: Polynomial coefficients in descending order
+    :param zs: Initial root guesses
+    :param options: Algorithm configuration
+    :return: Tuple of (refined roots, iterations, converged)
     """
     with ThreadPoolExecutor() as executor:
         for niter in range(options.max_iters):
@@ -517,7 +409,8 @@ def leja_order(points: List[complex]) -> List[complex]:
 
     Starts with the smallest-magnitude point, then iteratively selects the
     remaining point that maximizes the minimum Euclidean distance to all
-    already-selected points.
+    already-selected points. Improves numerical stability in polynomial
+    reconstruction.
 
     :param points: Input complex points
     :return: Reordered points in Leja sequence
@@ -549,8 +442,8 @@ def poly_from_roots(zs: List[complex]) -> List[float]:
     """
     Reconstruct a monic polynomial from its roots with Leja ordering.
 
-    Applies Leja ordering to the roots for numerical stability, then
-    convolves (x - r_i) factors to recover the monic polynomial coefficients.
+    Applies Leja ordering for numerical stability, then convolves (x - r_i)
+    factors to recover the monic polynomial coefficients.
 
     :param zs: Roots of the polynomial
     :return: Monic polynomial coefficients (highest degree first)
@@ -576,9 +469,8 @@ def poly_from_autocorr_roots(zs: List[complex]) -> List[float]:
     """
     Reconstruct a monic polynomial from autocorrelation roots.
 
-    Auto-correlation (palindromic) polynomials have roots in reciprocal pairs.
-    This function adds the reciprocal of each root (1/z), then reconstructs
-    with Leja ordering via poly_from_roots.
+    Palindromic polynomials have roots in reciprocal pairs. This function
+    adds 1/z for each root, then reconstructs via :func:`poly_from_roots`.
 
     :param zs: Roots from aberth_autocorr or aberth_autocorr_mt
     :return: Monic polynomial coefficients (highest degree first)

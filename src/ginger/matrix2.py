@@ -20,15 +20,15 @@ from .vector2 import Vector2
 
 
 class Matrix2:
-    """A 2x2 matrix class for linear algebra operations.
+    """A 2x2 matrix used in Bairstow's correction step.
 
-    This class represents a 2x2 matrix where each row is a Vector2 object.
-    It provides essential matrix operations used in polynomial root-finding
-    algorithms, including matrix-vector multiplication and determinant calculation.
+    Each row is a Vector2. Provides matrix-vector multiplication (:meth:`mdot`)
+    and determinant (:meth:`det`) for solving the 2x2 linear system in
+    root estimate refinement.
 
     Attributes:
-        x (Vector2): The first row of the matrix.
-        y (Vector2): The second row of the matrix.
+        x (Vector2): The first row
+        y (Vector2): The second row
 
     Example:
         >>> m = Matrix2(Vector2(1.0, 2.0), Vector2(3.0, 4.0))
@@ -43,33 +43,22 @@ class Matrix2:
 
     def __init__(self, x: Vector2, y: Vector2):
         """
-        Initialize a 2x2 matrix using two Vector2 rows.
+        Initialize the 2x2 matrix from two row vectors.
 
-        Parameters:
-        x (Vector2): First row vector of the matrix
-        y (Vector2): Second row vector of the matrix
+        :param x: First row
+        :param y: Second row
 
         Example:
             >>> m = Matrix2(Vector2(1.0, 2.0), Vector2(3.0, 4.0))
             >>> print(m.x)
             <1.0, 2.0>
-            >>> print(m.y)
-            <3.0, 4.0>
-            >>> print(m.mdot(Vector2(5.0, 6.0)))
-            <17.0, 39.0>
-            >>> print(m.det())
-            -2.0
         """
         self._x = x
         self._y = y
 
     @property
     def x(self) -> Vector2:
-        """
-        Get the first row vector of the matrix.
-
-        Returns:
-            Vector2: The first row vector
+        """First row of the matrix.
 
         Examples:
             >>> m = Matrix2(Vector2(1.0, 2.0), Vector2(3.0, 4.0))
@@ -80,11 +69,7 @@ class Matrix2:
 
     @property
     def y(self) -> Vector2:
-        """
-        Get the second row vector of the matrix.
-
-        Returns:
-            Vector2: The second row vector
+        """Second row of the matrix.
 
         Examples:
             >>> m = Matrix2(Vector2(1.0, 2.0), Vector2(3.0, 4.0))
@@ -94,18 +79,12 @@ class Matrix2:
         return self._y
 
     def mdot(self, rhs: Vector2) -> Vector2:
-        """
-        Matrix-vector multiplication: M * v.
+        """Matrix-vector multiplication: M * v.
 
-        Parameters:
-            rhs (Vector2): Right-hand side vector for multiplication
+        Returns Vector2(x·rhs, y·rhs).
 
-        Returns:
-            Vector2: Result vector of the matrix-vector product
-
-        Calculation:
-            [x•rhs]  # Dot product of first row with vector
-            [y•rhs]  # Dot product of second row with vector
+        :param rhs: Right-hand side vector
+        :return: Result of matrix-vector product
 
         Examples:
             >>> m = Matrix2(Vector2(1.0, 2.0), Vector2(3.0, 4.0))
@@ -115,14 +94,7 @@ class Matrix2:
         return Vector2(self._x.dot(rhs), self._y.dot(rhs))
 
     def det(self) -> float:
-        """
-        Calculate the determinant of the 2x2 matrix.
-
-        Formula:
-            det = (x.x * y.y) - (x.y * y.x)
-
-        Returns:
-            float: Determinant value
+        """Calculate the determinant: x.x·y.y - x.y·y.x.
 
         Examples:
             >>> m = Matrix2(Vector2(1.0, 2.0), Vector2(3.0, 4.0))
@@ -134,16 +106,9 @@ class Matrix2:
         return a11 * a22 - a12 * a21
 
     def __truediv__(self, alpha: float) -> "Matrix2":
-        """
-        Matrix scalar division: M / α.
+        """Scalar division: M / α.
 
-        Parameters:
-            alpha (float): Scalar divisor (must be non-zero)
-
-        Returns:
-            Matrix2: New matrix where each row is divided by alpha
-
-        Operation:
-            Returns new Matrix2(x/alpha, y/alpha)
+        :param alpha: Divisor (non-zero)
+        :return: New matrix with each row divided by alpha
         """
         return Matrix2(self.x / alpha, self.y / alpha)

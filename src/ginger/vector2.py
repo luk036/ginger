@@ -1,3 +1,12 @@
+"""Two-dimensional vector class used across root-finding modules.
+
+Vector2 represents an ordered pair (x, y) and provides arithmetic operations
+(dot product, addition, subtraction, scalar multiplication/division) needed
+by Bairstow's and Aberth's methods for storing quadratic factor coefficients
+and 2D residuals.
+"""
+
+
 class Vector2:
     """A 2D vector class for mathematical vector operations.
 

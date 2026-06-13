@@ -1,45 +1,17 @@
 """
-rootfinding.py
+Parallel Bairstow root-finding for real-coefficient polynomials.
 
-This code is a collection of functions and classes designed to find the roots of polynomial
-equations. In mathematics, finding the roots of a polynomial means determining the values of x
-that make the polynomial equal to zero. This is a common problem in various fields like engineering,
-physics, and computer science.
+This module implements a parallel version of Bairstow's method for finding all
+roots of a polynomial simultaneously. The algorithm factors the polynomial into
+quadratic factors (x² - r·x - q), using suppression to decouple root estimates,
+enabling parallel refinement.
 
-The main purpose of this code is to implement the Bairstow's method, which is an algorithm for
-finding complex roots of polynomials. It takes as input the coefficients of a polynomial and
-initial guesses for the roots, and outputs the calculated roots of the polynomial.
-
-The code starts by importing necessary modules and defining some utility classes and functions.
-The main algorithm is implemented in the pbairstow_even function. This function takes three inputs:
-
-1. A list of coefficients representing the polynomial
-2. A list of initial guesses for the roots
-3. An optional Options object to control the algorithm's behavior
-
-The output of pbairstow_even is a tuple containing:
-
-1. A list of the calculated roots
-2. The number of iterations performed
-3. A boolean indicating whether the algorithm successfully converged
-
-The algorithm works by iteratively refining the initial guesses for the roots. It uses a technique
-called "suppression" to improve the accuracy of each root estimate. The process continues until
-either the desired accuracy is achieved or the maximum number of iterations is reached.
-
-Some important parts of the code include:
-
-- The initial_guess function, which generates starting points for the algorithm
-- The suppress function, which helps improve the accuracy of root estimates
-- The horner function, which efficiently evaluates polynomials
-- The delta function, which calculates adjustments to the root estimates
-
-The code also includes helper functions for polynomial evaluation and manipulation, such as
-horner_eval and horner_backward.
-
-Overall, this code provides a sophisticated tool for solving polynomial equations, even when the
-roots are complex numbers. It's designed to be efficient and accurate, making it useful for
-applications that require finding roots of high-degree polynomials.
+Key functions:
+    pbairstow_even  — main parallel Bairstow solver
+    initial_guess   — generate starting estimates from coefficients
+    suppress        — decouple interference between root factors
+    horner          — evaluate polynomial against quadratic factor
+    roots_from_quadratic — extract two roots from a quadratic factor
 """
 
 from functools import reduce
@@ -55,18 +27,13 @@ from .vector2 import Vector2
 Num = Union[float, complex]
 
 
-# The class "Options" defines default values for maximum iterations, tolerance, and individual
-# tolerance.
 class Options:
-    """
-    Configuration options for root-finding algorithms.
+    """Configuration parameters for iterative root-finding algorithms.
 
-    This class provides control parameters for iterative root-finding methods:
-    - max_iters: Maximum number of iterations allowed (default: 2000)
-    - tolerance: Convergence tolerance for the algorithm (default: 1e-12)
-    - tol_ind: Individual root tolerance threshold (default: 1e-15)
-
-    These parameters allow fine-tuning of the algorithm's behavior and stopping criteria.
+    Attributes:
+        max_iters: Maximum number of iterations (default 2000)
+        tolerance: Global convergence tolerance (default 1e-12)
+        tol_ind: Per-root convergence tolerance (default 1e-15)
     """
 
     max_iters: int = 2000
@@ -78,18 +45,13 @@ class Options:
 def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
     """Calculate adjustment vector for Bairstow's method.
 
-    The `delta` function computes the correction vector used in Bairstow's method to update
-    root estimates. It solves a 2x2 linear system derived from polynomial division to find
+    Solves a 2x2 linear system derived from polynomial division to find
     the optimal adjustment to current root estimates.
 
     :param vA: Residual vector (A,B) from polynomial division
-    :type vA: Vector2
     :param vr: Current root estimate vector (r,q)
-    :type vr: Vector2
-    :param vp: Vector used in suppression calculations (p,s)
-    :type vp: Vector2
+    :param vp: Suppression vector (p,s) = vri - vrj
     :return: Correction vector to adjust root estimates
-    :rtype: Vector2
 
     .. svgbob::
 
@@ -114,23 +76,18 @@ def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
 
 
 def suppress_old(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2) -> None:
-    """Original implementation of zero suppression in Bairstow's method.
+    """Original zero suppression for Bairstow's method (modifies in-place).
 
-    This function modifies the residual vectors vA and vA1 to suppress the influence
-    of other roots (vrj) when estimating the current root (vri). This helps prevent
-    interference between root estimates during iteration.
+    Modifies residual vectors vA and vA1 to suppress interference from other
+    root estimates (vrj) during iteration.
 
-    Note: This is the original implementation that modifies vectors in-place.
-    The newer version returns modified vectors instead.
+    Note: This original version modifies vectors in-place. The newer
+    :func:`suppress` returns modified copies instead.
 
     :param vA: Current residual vector (A,B)
-    :type vA: Vector2
     :param vA1: First derivative residual vector (A1,B1)
-    :type vA1: Vector2
-    :param vri: Current root estimate being refined (ri,qi)
-    :type vri: Vector2
-    :param vrj: Another root estimate that might interfere (rj,qj)
-    :type vrj: Vector2
+    :param vri: Current root estimate (ri,qi)
+    :param vrj: Other root estimate (rj,qj)
 
     Reference:
         D. C. Handscomb, Computation of the latent roots of a Hessenberg matrix
@@ -170,20 +127,15 @@ def suppress(
 ) -> Tuple[Vector2, Vector2]:
     """Improved zero suppression for Bairstow's method.
 
-    This function calculates modified residual vectors that account for interference
-    from other roots in the system. It uses matrix operations to efficiently compute
-    the suppression terms, providing better numerical stability than the original version.
+    Uses matrix operations to compute modified residual vectors that account
+    for interference from other roots, with better numerical stability than
+    the in-place version (:func:`suppress_old`).
 
     :param vA: Current residual vector (A,B)
-    :type vA: Vector2
     :param vA1: First derivative residual vector (A1,B1)
-    :type vA1: Vector2
-    :param vri: Current root estimate being refined (ri,qi)
-    :type vri: Vector2
-    :param vrj: Another root estimate that might interfere (rj,qj)
-    :type vrj: Vector2
+    :param vri: Current root estimate (ri,qi)
+    :param vrj: Other root estimate (rj,qj)
     :return: Tuple of modified residual vectors (vA, vA1)
-    :rtype: Tuple[Vector2, Vector2]
 
     Reference:
         D. C. Handscomb, Computation of the latent roots of a Hessenberg matrix
@@ -216,17 +168,11 @@ def suppress(
 
 
 def horner_eval_f(coeffs: Sequence[Num], zval: Num) -> Num:
-    """Evaluate polynomial using Horner's method (functional version).
+    """Evaluate polynomial using Horner's method (functional reduce version).
 
-    This function computes the value of a polynomial at a given point using
-    Horner's method, which is more efficient than direct evaluation. It uses
-    Python's reduce function for a concise implementation.
-
-    :param coeffs: List of polynomial coefficients in descending order of degree
-    :type coeffs: List
-    :param zval: Point at which to evaluate the polynomial (can be complex)
+    :param coeffs: Polynomial coefficients in descending order of degree
+    :param zval: Point at which to evaluate the polynomial
     :return: Value of the polynomial at zval
-    :rtype: Same type as zval (float or complex)
 
     Examples:
         >>> coeffs = [1, -8, -72, 382, 727, -2310]
@@ -243,19 +189,11 @@ def horner_eval_f(coeffs: Sequence[Num], zval: Num) -> Num:
 #        P(z) = P (z) ⋅ ⎛z - z   ⎞ + A
 #                1      ⎝     val⎠
 def horner_eval(coeffs: Sequence[Num], zval: Num) -> Tuple[Any, List[Num]]:
-    """Evaluate polynomial and return intermediate coefficients.
+    """Evaluate polynomial via Horner, returning value and intermediate coefficients.
 
-    This function uses Horner's method to evaluate a polynomial and also returns
-    the intermediate coefficients that result from the synthetic division process.
-    These coefficients can be used for further computations like derivatives.
-
-    :param coeffs: List of polynomial coefficients in descending order of degree
-    :type coeffs: List
-    :param zval: Point at which to evaluate the polynomial (can be complex)
-    :return: Tuple containing:
-             - Value of polynomial at zval
-             - List of intermediate coefficients from synthetic division
-    :rtype: Tuple[Any, List]
+    :param coeffs: Polynomial coefficients in descending order of degree
+    :param zval: Point at which to evaluate the polynomial
+    :return: Tuple of (polynomial value at zval, intermediate coefficients)
 
     Examples:
         >>> coeffs = [1, -8, -72, 382, 727, -2310]
@@ -275,20 +213,15 @@ def horner_eval(coeffs: Sequence[Num], zval: Num) -> Tuple[Any, List[Num]]:
 #
 #    Note: P(x) becomes the quotient after calling this function
 def horner(coeffs: List[float], degree: int, vr: Vector2) -> Vector2:
-    """Evaluate quadratic polynomial factor and return remainder.
+    """Evaluate polynomial ÷ (x² - r·x - q), returning remainder and quotient in-place.
 
-    This specialized version of Horner's method evaluates a polynomial divided by
-    a quadratic factor (x² - r·x - q). It returns the linear remainder (A·x + B)
-    and modifies the coefficients array to contain the quotient polynomial.
+    Returns the linear remainder (A·x + B) and overwrites ``coeffs`` with the
+    quotient polynomial.
 
-    :param coeffs: List of polynomial coefficients in descending order
-    :type coeffs: List[float]
+    :param coeffs: Polynomial coefficients in descending order (modified in-place)
     :param degree: Degree of the polynomial (must be ≥ 2)
-    :type degree: int
-    :param vr: Vector representing quadratic factor coefficients (r,q)
-    :type vr: Vector2
+    :param vr: Quadratic factor coefficients (r,q)
     :return: Remainder vector (A,B)
-    :rtype: Vector2
 
     Examples:
         >>> coeffs = [1, -8, -72, 382, 727, -2310]
@@ -307,16 +240,14 @@ def horner(coeffs: List[float], degree: int, vr: Vector2) -> Vector2:
 
 
 def initial_guess(coeffs: List[float]) -> List[Vector2]:
-    """Generate initial root estimates for Bairstow's method.
+    """Generate initial quadratic-factor estimates for Bairstow's method.
 
-    This function creates reasonable starting points for the root-finding algorithm
-    by distributing estimates around a circle in the complex plane. The circle's
-    center and radius are determined from the polynomial's coefficients.
+    Distributes estimates around a circle whose center and radius are derived
+    from the polynomial coefficients, using a low-discrepancy sequence for
+    even angular spacing.
 
-    :param coeffs: List of polynomial coefficients in descending order
-    :type coeffs: List[float]
-    :return: List of initial root estimates as Vector2 objects (r,q pairs)
-    :rtype: List[Vector2]
+    :param coeffs: Polynomial coefficients in descending order
+    :return: List of initial quadratic factors as Vector2 (r,q)
 
     Examples:
         >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
@@ -339,23 +270,15 @@ def initial_guess(coeffs: List[float]) -> List[Vector2]:
 def pbairstow_even(
     coeffs: List[float], vrs: List[Vector2], options: Options = Options()
 ) -> Tuple[List[Vector2], int, bool]:
-    r"""Parallel implementation of Bairstow's root-finding method.
+    r"""Parallel Bairstow method for simultaneous root-finding.
 
-    This function implements a parallel version of Bairstow's method for finding
-    all roots of a polynomial simultaneously. It works by iteratively improving
-    estimates of quadratic factors of the polynomial.
+    Iteratively refines estimates of quadratic factors of the polynomial using
+    suppression to decouple root estimates. Convergence is cubic.
 
-    :param coeffs: List of polynomial coefficients in descending order
-    :type coeffs: List[float]
-    :param vrs: Initial estimates for quadratic factors (as Vector2 pairs)
-    :type vrs: List[Vector2]
-    :param options: Configuration parameters for the algorithm
-    :type options: Options
-    :return: Tuple containing:
-             - Final root estimates
-             - Number of iterations performed
-             - Convergence status (True if converged)
-    :rtype: Tuple[List[Vector2], int, bool]
+    :param coeffs: Polynomial coefficients in descending order
+    :param vrs: Initial estimates for quadratic factors
+    :param options: Algorithm configuration parameters
+    :return: Tuple of (final root estimates, iterations performed, converged)
 
     .. svgbob::
 
@@ -419,10 +342,13 @@ def roots_from_quadratic(vr: Vector2) -> Tuple[complex, complex]:
     Extract the two roots of a quadratic factor x^2 - r*x - q = 0.
 
     :param vr: Vector2 with x=r, y=q representing x^2 - r*x - q
-    :return: The two roots (may be real or complex conjugate pair)
+    :return: The two roots (real or complex conjugate pair)
 
     Examples:
-        >>> r1, r2 = roots_from_quadratic(Vector2(0, 1))
+        >>> r1, r2 = roots_from_quadratic(Vector2(0, 1))  # x^2 - 1
+        >>> print(r1, r2)
+        1.0 -1.0
+        >>> r1, r2 = roots_from_quadratic(Vector2(0, -1))  # x^2 + 1
         >>> abs(r1 - 1j) < 1e-14
         True
         >>> abs(r2 + 1j) < 1e-14
@@ -442,8 +368,9 @@ def poly_from_quadratic_factors(vrs: List[Vector2]) -> List[float]:
     """
     Reconstruct a monic polynomial from its quadratic factors.
 
-    Each factor x^2 - r*x - q is converted to its roots, then all roots are
-    reconstructed with Leja ordering via poly_from_roots.
+    Each factor x² - r·x - q is converted to its two roots, and the full
+    polynomial is reconstructed via :func:`aberth.poly_from_roots` with
+    Leja ordering for numerical stability.
 
     :param vrs: Quadratic factors from Bairstow's method
     :return: Monic polynomial coefficients (highest degree first)
@@ -467,16 +394,12 @@ def poly_from_quadratic_factors(vrs: List[Vector2]) -> List[float]:
 
 
 def find_rootq(vr: Vector2) -> Tuple[Num, Num]:
-    """Solve quadratic equation x² - r·x - q = 0.
+    """Solve quadratic equation x² - r·x - q = 0 using the alternative quadratic formula.
 
-    This function finds the roots of a quadratic equation represented by
-    the Vector2 vr, where vr.x is r and vr.y is q in the equation above.
-    It handles both real and complex roots appropriately.
+    Uses Vieta's formula for the second root to avoid catastrophic cancellation.
 
-    :param vr: Vector containing quadratic coefficients (r,q)
-    :type vr: Vector2
-    :return: Tuple containing the two roots (real or complex)
-    :rtype: Tuple[Num, Num]
+    :param vr: Quadratic coefficients (r,q)
+    :return: The two roots
 
     Examples:
         >>> vr = find_rootq(Vector2(5, -6))
