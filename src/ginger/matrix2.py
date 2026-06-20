@@ -79,9 +79,16 @@ class Matrix2:
         return self._y
 
     def mdot(self, rhs: Vector2) -> Vector2:
-        """Matrix-vector multiplication: M * v.
+        r"""Matrix-vector multiplication :math:`\mathbf{M} \cdot \mathbf{v}`.
 
-        Returns Vector2(x·rhs, y·rhs).
+        .. math::
+
+           \begin{bmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \end{bmatrix}
+           \begin{bmatrix} v_1 \\ v_2 \end{bmatrix}
+           = \begin{bmatrix}
+              a_{11} v_1 + a_{12} v_2 \\
+              a_{21} v_1 + a_{22} v_2
+              \end{bmatrix}
 
         :param rhs: Right-hand side vector
         :return: Result of matrix-vector product
@@ -94,7 +101,12 @@ class Matrix2:
         return Vector2(self._x.dot(rhs), self._y.dot(rhs))
 
     def det(self) -> float:
-        """Calculate the determinant: x.x·y.y - x.y·y.x.
+        r"""Matrix determinant.
+
+        .. math::
+
+           \det\begin{bmatrix} a & b \\ c & d \end{bmatrix}
+           = ad - bc
 
         Examples:
             >>> m = Matrix2(Vector2(1.0, 2.0), Vector2(3.0, 4.0))

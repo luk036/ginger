@@ -78,12 +78,19 @@ def horner_backward(coeffs1: List, degree: int, alpha: complex) -> complex:
 
 
 def initial_aberth(coeffs: Sequence[float]) -> List[complex]:
-    """
-    Generate initial root guesses using a low-discrepancy sequence.
+    r"""Generate initial root guesses using a low-discrepancy sequence.
 
-    Distributes guesses around a circle whose center and radius are derived
-    from polynomial coefficients. Uses a van der Corput sequence for even
-    angular distribution.
+    The center :math:`c` and radius :math:`R` are derived from the
+    coefficients:
+
+    .. math::
+
+       c &= -\frac{a_1}{n a_0} \\[4pt]
+       R &= \sqrt[n]{-P(c)} \\[4pt]
+       z_i &= c + R \cdot (\cos\theta_i + i\sin\theta_i)
+
+    where :math:`\theta_i = 2\pi v_i` with :math:`v_i` from a van der
+    Corput sequence for low-discrepancy angular spacing.
 
     :param coeffs: Polynomial coefficients in descending order
     :return: Initial root guesses as complex numbers
@@ -180,42 +187,29 @@ def aberth_mt(
 def aberth(
     coeffs: Sequence[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
-    r"""Core Aberth-Ehrlich root-finding algorithm (single-threaded).
+    r"""Aberth-Ehrlich simultaneous root-finding (single-threaded).
 
-    Iteratively improves root estimates using the correction formula:
+    Combines Newton's method with an implicit deflation strategy. Each root
+    estimate :math:`z_i` is updated by the correction:
 
-    .. svgbob::
+    .. math::
 
-                     P(zᵢ)
-          zᵢ' = zᵢ - ──────
-                     P'(zᵢ)
+       z_i' = z_i - \frac{P(z_i)}{P'(z_i)}
 
-    where
-                                   n
-                                .-----.
-                                 \      P(zᵢ)
-          P'(zᵢ) = P₁(zᵢ) -       /    ────────
-                                '-----' zᵢ - zⱼ
-                                  j≠i
+    where the derivative is modified by all other root estimates:
+
+    .. math::
+
+       P'(z_i) = P_1(z_i) - \sum_{\substack{j=1\\j\neq i}}^n
+                 \frac{P(z_i)}{z_i - z_j}
+
+    Here :math:`P_1(z)` is the ordinary derivative of :math:`P(z)`.
+    Convergence is cubic.
 
     :param coeffs: Polynomial coefficients in descending order
     :param zs: Initial root guesses
     :param options: Algorithm configuration
     :return: Tuple of (final roots, iterations performed, converged)
-
-    .. svgbob::
-
-                     P(zᵢ)
-          zᵢ' = zᵢ - ──────
-                     P'(zᵢ)
-
-        where
-                                   n
-                                .-----.
-                                 \      P(zᵢ)
-          P'(zᵢ) = P₁(zᵢ) -       /    ────────
-                                '-----' zᵢ - zⱼ
-                                  j≠i
 
     Examples:
         >>> h = [5.0, 2.0, 9.0, 6.0, 2.0]
@@ -304,11 +298,19 @@ def initial_aberth_autocorr_orig(coeffs: Sequence[float]) -> List[complex]:
 def aberth_autocorr(
     coeffs: Sequence[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
-    """
-    Aberth method variant for autocorrelation (palindromic) polynomials.
+    r"""Aberth method for palindromic (autocorrelation) polynomials.
 
-    Accounts for reciprocal root pairs (z and 1/z̄) in the derivative correction,
-    suitable for polynomials with symmetric coefficient structures.
+    Same as :func:`aberth` but additionally accounts for reciprocal root pairs
+    :math:`z` and :math:`1/\bar{z}` in the correction:
+
+    .. math::
+
+       P'(z_i) = P_1(z_i) - \sum_{\substack{j=1\\j\neq i}}^n
+                 \left(\frac{P(z_i)}{z_i - z_j} +
+                       \frac{P(z_i)}{z_i - 1/z_j}\right)
+
+    This preserves the reciprocal-root structure of autocorrelation
+    (palindromic) polynomials.
 
     :param coeffs: Polynomial coefficients in descending order
     :param zs: Initial root guesses
@@ -404,13 +406,17 @@ def aberth_autocorr_mt(
 
 
 def leja_order(points: List[complex]) -> List[complex]:
-    """
-    Greedy Leja ordering of complex points.
+    r"""Greedy Leja ordering for numerical stability.
 
-    Starts with the smallest-magnitude point, then iteratively selects the
-    remaining point that maximizes the minimum Euclidean distance to all
-    already-selected points. Improves numerical stability in polynomial
-    reconstruction.
+    Starts with :math:`p_0 = \arg\min |p|`, then iteratively selects:
+
+    .. math::
+
+       p_k = \arg\max_{p \in \text{remaining}}
+             \min_{q \in \text{selected}} |p - q|
+
+    This maximizes the minimum distance between successive points,
+    improving numerical stability in polynomial reconstruction.
 
     :param points: Input complex points
     :return: Reordered points in Leja sequence
@@ -439,11 +445,21 @@ def leja_order(points: List[complex]) -> List[complex]:
 
 
 def poly_from_roots(zs: List[complex]) -> List[float]:
-    """
-    Reconstruct a monic polynomial from its roots with Leja ordering.
+    r"""Reconstruct a monic polynomial from its roots.
 
-    Applies Leja ordering for numerical stability, then convolves (x - r_i)
-    factors to recover the monic polynomial coefficients.
+    Orders roots with Leja ordering for stability, then convolves factors:
+
+    .. math::
+
+       P(x) = \prod_{i=1}^n (x - r_i)
+            = x^n + a_{n-1} x^{n-1} + \cdots + a_0
+
+    The coefficients are computed by repeated convolution, i.e.:
+    starting from :math:`[1]`, for each root :math:`r`:
+
+    .. math::
+
+       c_{k+1} \leftarrow c_{k+1} - r \cdot c_k
 
     :param zs: Roots of the polynomial
     :return: Monic polynomial coefficients (highest degree first)

@@ -43,23 +43,25 @@ class Options:
 
 
 def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
-    """Calculate adjustment vector for Bairstow's method.
+    r"""Calculate adjustment vector for Bairstow's method.
 
-    Solves a 2x2 linear system derived from polynomial division to find
-    the optimal adjustment to current root estimates.
+    Solves the 2×2 linear system to find the optimal adjustment to current
+    quadratic factor estimates :math:`(r,q)`:
 
-    :param vA: Residual vector (A,B) from polynomial division
-    :param vr: Current root estimate vector (r,q)
-    :param vp: Suppression vector (p,s) = vri - vrj
-    :return: Correction vector to adjust root estimates
+    .. math::
 
-    .. svgbob::
+       \begin{bmatrix} r p + s & p \\ q p & s \end{bmatrix}
+       \begin{bmatrix} \Delta r \\ \Delta q \end{bmatrix}
+       = \begin{bmatrix} A \\ B \end{bmatrix}
 
-        ┌             ┐ -1  ┌ ┐
-        │ r⋅p + s   p │     │A│
-        │             │   ⋅ │ │
-        │   q⋅p     s │     │B│
-        └             ┘     └ ┘
+    where :math:`(p,s) = (r_i - r_j,\; q_i - q_j)` is the difference
+    between two factor estimates, and :math:`(A,B)` is the remainder from
+    polynomial division.
+
+    :param vA: Residual vector :math:`(A,B)` from polynomial division
+    :param vr: Current root estimate :math:`(r,q)`
+    :param vp: Suppression vector :math:`(p,s) = \mathbf{vr}_i - \mathbf{vr}_j`
+    :return: Correction vector :math:`(\Delta r, \Delta q)`
 
     Examples:
         >>> d = delta(Vector2(1, 2), Vector2(-2, 0), Vector2(4, 5))
@@ -125,21 +127,40 @@ def suppress_old(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2) -> None:
 def suppress(
     vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2
 ) -> Tuple[Vector2, Vector2]:
-    """Improved zero suppression for Bairstow's method.
+    r"""Zero-suppression for decoupling Bairstow factor estimates.
 
-    Uses matrix operations to compute modified residual vectors that account
-    for interference from other roots, with better numerical stability than
-    the in-place version (:func:`suppress_old`).
+    Modifies the residual vectors :math:`(A,B)` and :math:`(A_1,B_1)` to
+    suppress interference from another quadratic factor :math:`(r_j, q_j)`.
+    The adjugate matrix is:
 
-    :param vA: Current residual vector (A,B)
-    :param vA1: First derivative residual vector (A1,B1)
-    :param vri: Current root estimate (ri,qi)
-    :param vrj: Other root estimate (rj,qj)
-    :return: Tuple of modified residual vectors (vA, vA1)
+    .. math::
+
+       \mathbf{M}^* =
+       \begin{bmatrix} s & -p \\ -p q_i & p r_i + s \end{bmatrix},
+       \qquad \det(\mathbf{M}^*) = s(p r_i + s) - p^2 q_i
+
+    where :math:`(p,s) = (r_i - r_j,\; q_i - q_j)`. The modified
+    residuals are:
+
+    .. math::
+
+       \begin{bmatrix} A' \\ B' \end{bmatrix}
+       &= \det(\mathbf{M}^*) \cdot \mathbf{M}^*
+          \begin{bmatrix} A \\ B \end{bmatrix} \\[4pt]
+       \begin{bmatrix} A'_1 \\ B'_1 \end{bmatrix}
+       &= \mathbf{M}^*\bigl(
+          \mathbf{M}^* \begin{bmatrix} A_1 \\ B_1 \end{bmatrix}
+          - \begin{bmatrix} A' \\ B' \end{bmatrix}
+          \bigr)
 
     Reference:
-        D. C. Handscomb, Computation of the latent roots of a Hessenberg matrix
-        by Bairsow's method, Computer Journal, 5 (1962), pp. 139-141.
+        D. C. Handscomb, *Computer Journal*, 5 (1962), pp. 139-141.
+
+    :param vA: Current residual :math:`(A,B)`
+    :param vA1: Derivative residual :math:`(A_1,B_1)`
+    :param vri: Current factor :math:`(r_i,q_i)`
+    :param vrj: Other factor :math:`(r_j,q_j)`
+    :return: Modified residuals :math:`(A',B')` and :math:`(A'_1,B'_1)`
 
     Examples:
         >>> vA = Vector2(3, 3)
@@ -213,15 +234,31 @@ def horner_eval(coeffs: Sequence[Num], zval: Num) -> Tuple[Any, List[Num]]:
 #
 #    Note: P(x) becomes the quotient after calling this function
 def horner(coeffs: List[float], degree: int, vr: Vector2) -> Vector2:
-    """Evaluate polynomial ÷ (x² - r·x - q), returning remainder and quotient in-place.
+    r"""Synthetic division by a quadratic factor :math:`x^2 - r x - q`.
 
-    Returns the linear remainder (A·x + B) and overwrites ``coeffs`` with the
-    quotient polynomial.
+    Performs polynomial division:
+
+    .. math::
+
+       P(x) = Q(x)\cdot(x^2 - r x - q) + A x + B
+
+    Returns the linear remainder :math:`(A,B)` and overwrites ``coeffs``
+    with the quotient :math:`Q(x)` (deflated polynomial).
+
+    The recurrence for the quotient coefficients :math:`b_k` is:
+
+    .. math::
+
+       b_0 &= a_0 \\
+       b_1 &= a_1 + r b_0 \\
+       b_k &= a_k + r b_{k-1} + q b_{k-2} \quad (k \ge 2)
+
+    with remainder :math:`A = b_{n-1},\; B = b_n + q b_{n-1}`.
 
     :param coeffs: Polynomial coefficients in descending order (modified in-place)
     :param degree: Degree of the polynomial (must be ≥ 2)
-    :param vr: Quadratic factor coefficients (r,q)
-    :return: Remainder vector (A,B)
+    :param vr: Quadratic factor :math:`(r,q)`
+    :return: Remainder :math:`(A,B)`
 
     Examples:
         >>> coeffs = [1, -8, -72, 382, 727, -2310]
@@ -240,14 +277,23 @@ def horner(coeffs: List[float], degree: int, vr: Vector2) -> Vector2:
 
 
 def initial_guess(coeffs: List[float]) -> List[Vector2]:
-    """Generate initial quadratic-factor estimates for Bairstow's method.
+    r"""Generate initial quadratic-factor estimates for Bairstow's method.
 
-    Distributes estimates around a circle whose center and radius are derived
-    from the polynomial coefficients, using a low-discrepancy sequence for
-    even angular spacing.
+    Estimates are placed around a circle centered at :math:`c` with radius
+    :math:`R`:
+
+    .. math::
+
+       c &= -\frac{a_1}{n a_0},\qquad
+       R = \sqrt[n]{|P(c)|} \\[4pt]
+       \theta_k &= \pi \cdot \text{VDC}_2[k+1] \\[4pt]
+       (r_k, q_k) &= \bigl(2(c + R\cos\theta_k),\;
+                     -(c^2 + R^2 + 2cR\cos\theta_k)\bigr)
+
+    where :math:`\text{VDC}_2` is a van der Corput low-discrepancy sequence.
 
     :param coeffs: Polynomial coefficients in descending order
-    :return: List of initial quadratic factors as Vector2 (r,q)
+    :return: List of initial quadratic factors as :class:`~ginger.vector2.Vector2` :math:`(r,q)`
 
     Examples:
         >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
@@ -272,38 +318,39 @@ def pbairstow_even(
 ) -> Tuple[List[Vector2], int, bool]:
     r"""Parallel Bairstow method for simultaneous root-finding.
 
-    Iteratively refines estimates of quadratic factors of the polynomial using
-    suppression to decouple root estimates. Convergence is cubic.
+    Iteratively refines :math:`m = n/2` quadratic factors of the polynomial
+    using suppression to decouple estimates. Each factor :math:`(r_i, q_i)`
+    is updated by solving a 2×2 system:
+
+    .. math::
+
+       \begin{bmatrix} r_i \\ q_i \end{bmatrix}^{\!(k+1)}
+       = \begin{bmatrix} r_i \\ q_i \end{bmatrix}^{\!(k)}
+       - \begin{bmatrix}
+          A'_1 r_i + B'_1 & A'_1 \\
+          A'_1 q_i        & B'_1
+          \end{bmatrix}^{-1}
+         \begin{bmatrix} A \\ B \end{bmatrix}
+
+    where the "suppressed" derivative residuals are:
+
+    .. math::
+
+       \begin{bmatrix} A'_1 \\ B'_1 \end{bmatrix}
+       = \begin{bmatrix} A_1 \\ B_1 \end{bmatrix}
+       - \sum_{j \neq i}
+         \begin{bmatrix}
+         p_{ij} r_i + s_{ij} & p_{ij} \\
+         p_{ij} q_i          & s_{ij}
+         \end{bmatrix}^{-1}
+         \begin{bmatrix} A \\ B \end{bmatrix}
+
+    with :math:`(p_{ij}, s_{ij}) = (r_i - r_j,\; q_i - q_j)`.
 
     :param coeffs: Polynomial coefficients in descending order
     :param vrs: Initial estimates for quadratic factors
     :param options: Algorithm configuration parameters
     :return: Tuple of (final root estimates, iterations performed, converged)
-
-    .. svgbob::
-
-        ┌ ┐(new)   ┌ ┐     ┌-------------------┐ -1  ┌ ┐
-        │rᵢ│       │rᵢ│     │ A'₁⋅rᵢ + B'₁   A'₁│     │A│
-        │ │       │ │   - │                   │   ⋅ │ │
-        │qᵢ│       │qᵢ│     │   A'₁⋅qᵢ      B'₁│     │B│
-        └ ┘       └ ┘     └-------------------┘     └ ┘
-
-        where
-
-          ┌   ┐     ┌  ┐     m   ┌--------------------┐ -1  ┌ ┐
-          │A'₁│     │A₁│   _____ │ pᵢⱼ⋅rᵢ + sᵢⱼ   pᵢⱼ │     │A│
-          │   │  =  │  │ -  ╲    │                    │   ⋅ │ │
-          │B'₁│     │B₁│   ╱     │   pᵢⱼ⋅qᵢ     sᵢⱼ  │     │B│
-          └   ┘     └  ┘    ‾‾‾‾‾ └--------------------┘     └ ┘
-                           j ≠ i
-
-          and
-
-          ┌   ┐   ┌ ┐   ┌ ┐
-          │pᵢⱼ│   │rᵢ│   │rⱼ│
-          │   │ = │ │ - │ │
-          │sᵢⱼ│   │qᵢ│   │qⱼ│
-          └   ┘   └ ┘   └ ┘
 
     Examples:
         >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
@@ -338,10 +385,15 @@ def pbairstow_even(
 
 
 def roots_from_quadratic(vr: Vector2) -> Tuple[complex, complex]:
-    """
-    Extract the two roots of a quadratic factor x^2 - r*x - q = 0.
+    r"""Solve :math:`x^2 - r x - q = 0` for its two roots.
 
-    :param vr: Vector2 with x=r, y=q representing x^2 - r*x - q
+    Uses the quadratic formula:
+
+    .. math::
+
+       x = \frac{r \pm \sqrt{r^2 + 4q}}{2}
+
+    :param vr: Vector2 with :math:`x=r, y=q` representing :math:`x^2 - r x - q`
     :return: The two roots (real or complex conjugate pair)
 
     Examples:
@@ -394,11 +446,18 @@ def poly_from_quadratic_factors(vrs: List[Vector2]) -> List[float]:
 
 
 def find_rootq(vr: Vector2) -> Tuple[Num, Num]:
-    """Solve quadratic equation x² - r·x - q = 0 using the alternative quadratic formula.
+    r"""Solve :math:`x^2 - r x - q = 0` using Vieta's formula.
 
-    Uses Vieta's formula for the second root to avoid catastrophic cancellation.
+    Uses the alternative (Citardauq) formula to avoid catastrophic
+    cancellation when :math:`|r|` is large:
 
-    :param vr: Quadratic coefficients (r,q)
+    .. math::
+
+       x_1 &= \frac{r}{2} + \operatorname{sgn}\!\left(\frac{r}{2}\right)
+             \sqrt{\left(\frac{r}{2}\right)^2 + q} \\[4pt]
+       x_2 &= -\frac{q}{x_1} \qquad\text{(Vieta's formula)}
+
+    :param vr: Quadratic coefficients :math:`(r,q)`
     :return: The two roots
 
     Examples:

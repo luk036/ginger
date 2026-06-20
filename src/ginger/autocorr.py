@@ -22,15 +22,22 @@ from .vector2 import Vector2
 
 
 def initial_autocorr(coeffs: List[float]) -> List[Vector2]:
-    """
-    Generate initial quadratic-factor estimates for autocorrelation polynomials.
+    r"""Generate initial quadratic-factor estimates for autocorrelation polynomials.
 
-    Computes radius from the constant term, adjusts to focus on roots outside
-    the unit circle, and generates estimates with cosine-spaced angular
-    distribution.
+    For palindromic polynomials, roots come in reciprocal pairs. The radius
+    is derived from the constant term and adjusted to focus on roots outside
+    the unit circle:
+
+    .. math::
+
+       R &= \sqrt[n]{|a_n|},\qquad
+       R \leftarrow \max(R, 1/R) \\[4pt]
+       \theta_k &= \frac{k\pi}{m},\qquad
+       m = n/2 \\[4pt]
+       (r_k, q_k) &= \bigl(2R\cos\theta_k,\; -R^2\bigr)
 
     :param coeffs: Polynomial coefficients in descending order
-    :return: Initial quadratic factors as Vector2 (r,q)
+    :return: Initial quadratic factors as :class:`~ginger.vector2.Vector2` :math:`(r,q)`
 
     Examples:
         >>> h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
@@ -149,14 +156,22 @@ def poly_from_autocorr_factors(vrs: List[Vector2]) -> List[float]:
 
 
 def extract_autocorr(vr: Vector2) -> Vector2:
-    """
-    Normalize quadratic factors to keep roots within the unit circle.
+    r"""Normalize quadratic factors to keep roots within the unit circle.
 
-    Computes the roots of x² - r·x - q and takes reciprocals for any root
-    outside the unit circle, producing a new quadratic with stable roots.
+    Given a quadratic :math:`x^2 - r x - q`, computes its roots and replaces
+    any root :math:`|z| > 1` with its reciprocal :math:`1/z`. The normalized
+    factor is recovered from the adjusted roots via Vieta:
 
-    :param vr: Quadratic coefficients (r, q)
-    :return: Normalized quadratic with |roots| ≤ 1
+    .. math::
+
+       r' = z_1' + z_2',\qquad
+       q' = -z_1' z_2'
+
+    where :math:`z_k' = z_k` if :math:`|z_k| \le 1`, else
+    :math:`z_k' = 1/z_k`.
+
+    :param vr: Quadratic coefficients :math:`(r, q)`
+    :return: Normalized quadratic with :math:`|z_k| \le 1`
 
     Examples:
         >>> vr = Vector2(5, -6)

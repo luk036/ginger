@@ -76,17 +76,14 @@ class Vector2:
         return self._y
 
     def dot(self, rhs: "Vector2") -> float:
-        """
-        Calculate the dot product of this vector with another vector.
+        r"""Dot product of two 2D vectors.
 
-        The dot product (also called scalar product) is a fundamental operation
-        in vector mathematics that returns a single scalar value representing
-        the magnitude of the projection of one vector onto another.
+        .. math::
 
-        :param rhs: The right-hand side vector for the dot product operation
-        :type rhs: Vector2
-        :return: The scalar dot product result
-        :rtype: float
+           \mathbf{v}_1 \cdot \mathbf{v}_2 = x_1 x_2 + y_1 y_2
+
+        :param rhs: The right-hand side vector
+        :return: The scalar dot product
 
         Examples:
             >>> v1 = Vector2(1, 2)
