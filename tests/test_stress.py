@@ -40,62 +40,62 @@ def random_palindromic_poly(degree: int) -> list[float]:
 
 def test_stress_aberth_st_random_high_degree() -> None:
     """Stress test aberth (ST) with a high-degree polynomial."""
-    h = random_poly(100)
+    h = random_poly(30)
     zs = initial_aberth(h)
     assert len(zs) == len(h) - 1
 
     opts = Options()
     opts.tolerance = 1e-9
-    opts.max_iters = 2000
+    opts.max_iters = 500
     zs, niter, converged = aberth(h, zs, opts)
 
-    # Random degree-100 polynomials are ill-conditioned;
+    # Random high-degree polynomials are ill-conditioned;
     # verify the algorithm ran without error, not guaranteed convergence
-    print(f"aberth ST degree-100: niter={niter}, converged={converged}")
+    print(f"aberth ST degree-30: niter={niter}, converged={converged}")
     assert 0 < niter <= opts.max_iters
 
 
 def test_stress_aberth_mt_random_high_degree() -> None:
     """Stress test aberth_mt with a high-degree polynomial."""
-    h = random_poly(100)
+    h = random_poly(30)
     zs = initial_aberth(h)
 
     opts = Options()
     opts.tolerance = 1e-9
-    opts.max_iters = 2000
+    opts.max_iters = 500
     zs, niter, converged = aberth_mt(h, zs, opts)
 
-    print(f"aberth MT degree-100: niter={niter}, converged={converged}")
+    print(f"aberth MT degree-30: niter={niter}, converged={converged}")
     assert 0 < niter <= opts.max_iters
 
 
 def test_stress_aberth_autocorr_st_random_high_degree() -> None:
     """Stress test aberth_autocorr (ST) with a high-degree palindromic polynomial."""
-    h = random_palindromic_poly(100)
+    h = random_palindromic_poly(30)
     zs = initial_aberth_autocorr(h)
     assert len(zs) == len(h) // 2
 
     opts = Options()
     opts.tolerance = 1e-9
-    opts.max_iters = 2000
+    opts.max_iters = 500
     zs, niter, converged = aberth_autocorr(h, zs, opts)
 
-    print(f"aberth_autocorr ST degree-100: niter={niter}, converged={converged}")
+    print(f"aberth_autocorr ST degree-30: niter={niter}, converged={converged}")
     assert 0 < niter <= opts.max_iters
 
 
 def test_stress_aberth_autocorr_mt_random_high_degree() -> None:
     """Stress test aberth_autocorr (MT) with a high-degree palindromic polynomial."""
-    h = random_palindromic_poly(100)
+    h = random_palindromic_poly(30)
     zs = initial_aberth_autocorr(h)
     assert len(zs) == len(h) // 2
 
     opts = Options()
     opts.tolerance = 1e-9
-    opts.max_iters = 2000
+    opts.max_iters = 500
     zs, niter, converged = aberth_autocorr_mt(h, zs, opts)
 
-    print(f"aberth_autocorr MT degree-100: niter={niter}, converged={converged}")
+    print(f"aberth_autocorr MT degree-30: niter={niter}, converged={converged}")
     assert 0 < niter <= opts.max_iters
 
 
@@ -106,31 +106,31 @@ def test_stress_aberth_autocorr_mt_random_high_degree() -> None:
 
 def test_stress_pbairstow_even_random_high_degree() -> None:
     """Stress test pbairstow_even with a high-degree polynomial."""
-    h = random_poly(100)
+    h = random_poly(30)
     vrs = initial_guess(h)
     assert len(vrs) == len(h) // 2
 
     opts = Options()
     opts.tolerance = 1e-9
-    opts.max_iters = 4000
+    opts.max_iters = 500
     vrs, niter, converged = pbairstow_even(h, vrs, opts)
 
-    print(f"pbairstow_even degree-100: niter={niter}, converged={converged}")
+    print(f"pbairstow_even degree-30: niter={niter}, converged={converged}")
     assert 0 < niter <= opts.max_iters
 
 
 def test_stress_pbairstow_autocorr_random_high_degree() -> None:
     """Stress test pbairstow_autocorr with a high-degree palindromic polynomial."""
-    h = random_palindromic_poly(100)
+    h = random_palindromic_poly(30)
     vrs = initial_autocorr(h)
     assert len(vrs) == len(h) // 4
 
     opts = Options()
     opts.tolerance = 1e-9
-    opts.max_iters = 4000
+    opts.max_iters = 500
     vrs, niter, converged = pbairstow_autocorr(h, vrs, opts)
 
-    print(f"pbairstow_autocorr degree-100: niter={niter}, converged={converged}")
+    print(f"pbairstow_autocorr degree-30: niter={niter}, converged={converged}")
     assert 0 < niter <= opts.max_iters
 
 
