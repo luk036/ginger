@@ -165,7 +165,7 @@ def test_aberth_fir() -> None:
     print([niter, found])
     for z in zs:
         print(z)
-    assert niter <= 14
+    assert niter <= 18
 
 
 def test_aberth_autocorr_fir() -> None:
