@@ -152,13 +152,13 @@ def aberth_mt(
     """
 
     def aberth_job(
-        i: int,
+        i: int, zsc: List[complex]
     ) -> Tuple[float, int, complex]:
-        zi = zs[i]
+        zi = zsc[i]
         p_eval, coeffs1 = horner_eval(coeffs, zi)
         tol_i = abs(p_eval)
         p1_eval, _ = horner_eval(coeffs1[:-1], zi)
-        for j, zj in enumerate(zs):
+        for j, zj in enumerate(zsc):
             if i != j:
                 p1_eval -= p_eval / (zi - zj)
         zi -= p_eval / p1_eval
@@ -168,9 +168,10 @@ def aberth_mt(
         for niter in range(options.max_iters):
             tolerance = 0.0
             futures = []
+            zsc = zs[:]  # one snapshot per iteration (not one per job)
 
             for i in range(len(zs)):
-                futures.append(executor.submit(aberth_job, i))
+                futures.append(executor.submit(aberth_job, i, zsc))
 
             for future in futures:
                 tol_i, i, zi = future.result()
@@ -389,9 +390,10 @@ def aberth_autocorr_mt(
         for niter in range(options.max_iters):
             tolerance = 0.0
             futures = []
+            zsc = zs[:]  # one snapshot per iteration (not one per job)
 
             for i in range(len(zs)):
-                futures.append(executor.submit(aberth_autocorr_job, coeffs, i, zs[:]))
+                futures.append(executor.submit(aberth_autocorr_job, coeffs, i, zsc))
 
             for future in futures:
                 tol_i, i, zi = future.result()
