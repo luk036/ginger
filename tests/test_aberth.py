@@ -80,6 +80,44 @@ def test_aberth_non_convergence() -> None:
     assert found is False
 
 
+def test_aberth_mt_non_convergence() -> None:
+    """Test non-convergence of aberth_mt (line 185)."""
+    h = [5.0, 2.0, 9.0, 6.0, 2.0]
+    z0s = initial_aberth(h)
+    opts = Options()
+    opts.max_iters = 1
+    _, _, found = aberth_mt(h, z0s, opts)
+    assert found is False
+
+
+def test_aberth_autocorr_non_convergence() -> None:
+    """Test non-convergence of aberth_autocorr (line 344)."""
+    h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
+    z0s = initial_aberth_autocorr(h)
+    opts = Options()
+    opts.max_iters = 1
+    _, _, found = aberth_autocorr(h, z0s, opts)
+    assert found is False
+
+
+def test_aberth_autocorr_mt_non_convergence() -> None:
+    """Test non-convergence of aberth_autocorr_mt (line 407)."""
+    h = [10.0, 34.0, 75.0, 94.0, 150.0, 94.0, 75.0, 34.0, 10.0]
+    z0s = initial_aberth_autocorr(h)
+    opts = Options()
+    opts.max_iters = 1
+    _, _, found = aberth_autocorr_mt(h, z0s, opts)
+    assert found is False
+
+
+def test_initial_aberth_autocorr_orig_large_radius() -> None:
+    """Test initial_aberth_autocorr_orig with radius > 1 (line 290)."""
+    h = [1.0, 0.0, 0.0, 0.0, 10.0]
+    z0s = initial_aberth_autocorr_orig(h)
+    for z in z0s:
+        assert abs(z) < 1.1
+
+
 def test_aberth_autocorr_single_root() -> None:
     """Test aberth_autocorr with a single root."""
     h = [1.0, -1.0]
