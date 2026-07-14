@@ -113,14 +113,14 @@ def suppress_old(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2) -> None:
     f_val = r_coeff * p_coeff + s_coeff
     qp_val = q_coeff * p_coeff
     e_val = f_val * s_coeff - qp_val * p_coeff
-    a_val = A_val * s_coeff - B_val * p_coeff
-    b_val = B_val * f_val - A_val * qp_val
-    c_val = A1_val * e_val - a_val
-    d_val = B1_val * e_val - b_val - a_val * p_coeff
-    vA._x = a_val * e_val
-    vA._y = b_val * e_val
-    vA1._x = c_val * s_coeff - d_val * p_coeff
-    vA1._y = d_val * f_val - c_val * qp_val
+    new_a = (A_val * s_coeff - B_val * p_coeff) / e_val
+    new_b = (B_val * f_val - A_val * qp_val) / e_val
+    c_val = A1_val - new_a
+    d_val = (B1_val - new_b) - new_a * p_coeff
+    vA._x = new_a
+    vA._y = new_b
+    vA1._x = (c_val * s_coeff - d_val * p_coeff) / e_val
+    vA1._y = (d_val * f_val - c_val * qp_val) / e_val
     # return delta(vA, vri, Vector2(vA1._x, -vA1._y))
 
 
@@ -309,7 +309,7 @@ def initial_guess(coeffs: List[float]) -> List[Vector2]:
 
     from .aberth import COS_PI_VDC2_TABLE
 
-    temp = iter(radius * COS_PI_VDC2_TABLE[i + 1] for i in range(0, degree // 2))
+    temp = iter(radius * COS_PI_VDC2_TABLE[i] for i in range(degree // 2))
     return [Vector2(2 * (center + t), -(quad_term + 2 * center * t)) for t in temp]
 
 
@@ -377,7 +377,7 @@ def pbairstow_even(
             vA1 = horner(coeffs1, degree - 2, vri)
             tolerance = max(tol_i, tolerance)
             for j in robin.exclude(i):
-                vA, vA1 = suppress(vA, vA1, vri, vrs[j])
+                suppress_old(vA, vA1, vri, vrs[j])
             vrs[i] -= delta(vA, vri, vA1)
         if tolerance < options.tolerance:
             return vrs, niter, True
