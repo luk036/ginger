@@ -12,12 +12,12 @@ Key functions:
     poly_from_autocorr_factors — reconstruct polynomial from autocorr factors
 """
 
-from math import cos, pi, sqrt
+from math import sqrt
 from typing import List, Tuple
 
 from mywheel.robin import Robin
 
-from .rootfinding import Options, delta, horner, suppress
+from .rootfinding import Options, delta, horner, suppress, suppress_old
 from .vector2 import Vector2
 
 
@@ -25,16 +25,13 @@ def initial_autocorr(coeffs: List[float]) -> List[Vector2]:
     r"""Generate initial quadratic-factor estimates for autocorrelation polynomials.
 
     For palindromic polynomials, roots come in reciprocal pairs. The radius
-    is derived from the constant term and adjusted to focus on roots outside
-    the unit circle:
+    is derived from the constant term. Initial guesses use a van der Corput
+    low-discrepancy sequence for angular spacing:
 
     .. math::
 
-       R &= \sqrt[n]{|a_n|},\qquad
-       R \leftarrow \max(R, 1/R) \\[4pt]
-       \theta_k &= \frac{k\pi}{m},\qquad
-       m = n/2 \\[4pt]
-       (r_k, q_k) &= \bigl(2R\cos\theta_k,\; -R^2\bigr)
+       R &= \sqrt[n]{|a_n|} \\[4pt]
+       (r_k, q_k) &= \bigl(2R\cos(\pi \cdot \text{VDC}_2[k]),\; -R^2\bigr)
 
     :param coeffs: Polynomial coefficients in descending order
     :return: Initial quadratic factors as :class:`~ginger.vector2.Vector2` :math:`(r,q)`
@@ -44,18 +41,15 @@ def initial_autocorr(coeffs: List[float]) -> List[Vector2]:
         >>> vrs = initial_autocorr(h)
     """
     degree = len(coeffs) - 1
-    # Calculate initial radius estimate using absolute value of constant term
     radius = pow(abs(coeffs[-1]), 1.0 / degree)
-    if radius < 1:  # Focus on roots outside unit circle by taking reciprocal
-        radius = 1 / radius
-    degree //= 2  # Work with half-degree for conjugate pairs
-    angle_step = pi / degree  # Angular step size between roots
+    degree //= 2
+    quad_term = radius * radius
+    num_points = degree // 2
+    from .aberth import COS_PI_VDC2_TABLE
 
-    quad_term = radius * radius  # Quadratic term for Vector2
-    # Generate initial guesses using cosine distribution of roots
     return [
-        Vector2(2 * radius * cos(angle_step * i), -quad_term)
-        for i in range(1, degree, 2)
+        Vector2(2.0 * radius * COS_PI_VDC2_TABLE[i], -quad_term)
+        for i in range(num_points)
     ]
 
 
@@ -108,10 +102,14 @@ def pbairstow_autocorr(
             # Suppress influence of other factors
             for j in robin.exclude(i):
                 vrj = vrs[j]
-                vA, vA1 = suppress(vA, vA1, vri, vrj)
+                suppress_old(vA, vA1, vri, vrj)
                 # Handle reciprocal roots
                 vrn = Vector2(-vrj.x, 1.0) / vrj.y
-                vA, vA1 = suppress(vA, vA1, vri, vrn)
+                suppress_old(vA, vA1, vri, vrn)
+
+            # Suppress own reciprocal (palindromic root-pair symmetry)
+            vrin = Vector2(-vri.x, 1.0) / vri.y
+            suppress_old(vA, vA1, vri, vrin)
 
             # Apply Newton-Raphson update
             vrs[i] -= delta(vA, vri, vA1)
