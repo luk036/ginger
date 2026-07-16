@@ -151,9 +151,7 @@ def aberth_mt(
     :return: Tuple of (refined roots, iterations, converged)
     """
 
-    def aberth_job(
-        i: int, zsc: List[complex]
-    ) -> Tuple[float, int, complex]:
+    def aberth_job(i: int, zsc: List[complex]) -> Tuple[float, int, complex]:
         zi = zsc[i]
         p_eval, coeffs1 = horner_eval(coeffs, zi)
         tol_i = abs(p_eval)
