@@ -17,7 +17,7 @@ from typing import List, Tuple
 
 from mywheel.robin import Robin
 
-from .rootfinding import Options, delta, horner, suppress, suppress_old
+from .rootfinding import Options, delta, horner, suppress_old
 from .vector2 import Vector2
 
 
