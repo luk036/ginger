@@ -29,7 +29,6 @@ from lds_gen.lds import TWO_PI, VdCorput
 from .rootfinding import Options, horner_eval, horner_eval_f
 
 Num = Union[float, complex]
-# from mywheel.robin import Robin
 
 # ---------------------------------------------------------------------------
 # Precomputed LDS tables (replaces runtime Circle/VdCorput generation)
@@ -103,7 +102,6 @@ def initial_aberth(coeffs: Sequence[float]) -> List[complex]:
     center: float = -coeffs[1] / (degree * coeffs[0])
     poly_c: Num = horner_eval_f(coeffs, center)
     radius: float | complex = pow(-poly_c, 1.0 / degree)
-    # radius: float = pow(abs(poly_c), 1.0 / degree)
     return [
         center + radius * complex(x, y)
         for y, x in (CIRCLE_TABLE_2[i] for i in range(degree))
@@ -259,7 +257,6 @@ def initial_aberth_autocorr(coeffs: Sequence[float]) -> List[complex]:
     center: float = -coeffs[1] / (degree * coeffs[0])
     poly_c: Num = horner_eval_f(coeffs, center)
     radius: float | complex = pow(-poly_c, 1.0 / degree)
-    # radius: float | complex = pow(-coeffs[-1], 1.0 / degree)
     if abs(radius) > 1.0:
         radius = 1.0 / radius
     return [
@@ -283,7 +280,6 @@ def initial_aberth_autocorr_orig(coeffs: Sequence[float]) -> List[complex]:
     center: float = -coeffs[1] / (degree * coeffs[0])
     poly_c: Num = horner_eval_f(coeffs, center)
     radius: float = pow(abs(poly_c), 1.0 / degree)
-    # radius: float = pow(abs(coeffs[-1]), 1.0 / degree)
     if abs(radius) > 1:
         radius = 1 / radius
     degree //= 2

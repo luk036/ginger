@@ -29,7 +29,6 @@ def leja(points: List[complex]) -> List[complex]:
     points.pop(idx)  # Remove this point from further consideration
 
     while points:
-        # Compute distances from remaining points to the last point in leja_order
         distances = np.abs(np.array(points) - leja_ordered_points[-1])
 
         # Find the index of the point with the maximum minimum distance
@@ -37,8 +36,6 @@ def leja(points: List[complex]) -> List[complex]:
 
         # Append this point to the leja_ordered_points
         leja_ordered_points.append(points[next_idx])
-
-        # Remove this point from further consideration
         points.pop(next_idx)
 
     return leja_ordered_points

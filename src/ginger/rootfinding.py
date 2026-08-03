@@ -39,7 +39,6 @@ class Options:
     max_iters: int = 2000
     tolerance: float = 1e-12
     tol_ind: float = 1e-15
-    # tol_suppress: float = 1e-1
 
 
 def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
