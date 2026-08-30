@@ -15,9 +15,7 @@ Key functions:
 from math import sqrt
 from typing import List, Tuple
 
-from mywheel.robin import Robin
-
-from .rootfinding import Options, delta, horner, suppress_old
+from .rootfinding import Options, _bairstow_solve, roots_from_quadratic
 from .vector2 import Vector2
 
 
@@ -74,51 +72,7 @@ def pbairstow_autocorr(
         >>> found
         True
     """
-    num_factors = len(vrs)  # Number of quadratic factors
-    degree = len(coeffs) - 1
-    converged = [False] * num_factors  # Convergence status tracker
-    robin = Robin(num_factors)  # Round-robin iterator for factor updates
-
-    for niter in range(options.max_iters):
-        tolerance = 0.0  # Track maximum error across all factors
-        for i, (vri, ci) in enumerate(zip(vrs, converged)):
-            if ci:  # Skip already converged factors
-                continue
-
-            # Polynomial evaluation at current factor estimate
-            coeffs1 = coeffs.copy()
-            vA = horner(coeffs1, degree, vri)
-
-            # Check individual convergence
-            tol_i = max(abs(vA.x), abs(vA.y))
-            if tol_i < options.tol_ind:
-                converged[i] = True
-                continue
-            tolerance = max(tolerance, tol_i)
-
-            # Evaluate reduced polynomial (degree-2)
-            vA1 = horner(coeffs1, degree - 2, vri)
-
-            # Suppress influence of other factors
-            for j in robin.exclude(i):
-                vrj = vrs[j]
-                suppress_old(vA, vA1, vri, vrj)
-                # Handle reciprocal roots
-                vrn = Vector2(-vrj.x, 1.0) / vrj.y
-                suppress_old(vA, vA1, vri, vrn)
-
-            # Suppress own reciprocal (palindromic root-pair symmetry)
-            vrin = Vector2(-vri.x, 1.0) / vri.y
-            suppress_old(vA, vA1, vri, vrin)
-
-            # Apply Newton-Raphson update
-            vrs[i] -= delta(vA, vri, vA1)
-
-        # Check global convergence
-        if tolerance < options.tolerance:
-            return vrs, niter, True
-
-    return vrs, options.max_iters, False
+    return _bairstow_solve(coeffs, vrs, options, autocorr=True)
 
 
 def poly_from_autocorr_factors(vrs: List[Vector2]) -> List[float]:
@@ -141,7 +95,6 @@ def poly_from_autocorr_factors(vrs: List[Vector2]) -> List[float]:
     if not vrs:
         return [1.0]
     from .aberth import poly_from_roots
-    from .rootfinding import roots_from_quadratic
 
     all_roots: List[complex] = []
     for vr in vrs:

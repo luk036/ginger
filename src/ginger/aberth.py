@@ -20,12 +20,12 @@ This module provides:
 """
 
 import math
-from concurrent.futures import ThreadPoolExecutor
 from math import cos, pi, sin
 from typing import List, Sequence, Tuple, Union
 
 from lds_gen.lds import TWO_PI, VdCorput
 
+from ._policy import jacobi_mt_run, sequential_run
 from .rootfinding import Options, horner_eval, horner_eval_f
 
 Num = Union[float, complex]
@@ -134,11 +134,35 @@ def initial_aberth_orig(coeffs: Sequence[float]) -> List[complex]:
     ]
 
 
+def aberth_job(
+    coeffs: Sequence[float], i: int, zsc: List[complex]
+) -> Tuple[float, int, complex]:
+    """Worker for the Aberth update — computes the correction for a single root.
+
+    Evaluates the polynomial and its derivative at ``z_i``, applies the
+    deflation correction from all other roots, and returns the residual and
+    the new estimate without mutating the input list.
+
+    :param coeffs: Polynomial coefficients in descending order
+    :param i: Index of the root to update
+    :param zsc: Current list of root estimates
+    :return: Tuple of (residual at z_i, root index, new root estimate)
+    """
+    zi = zsc[i]
+    p_eval, coeffs1 = horner_eval(coeffs, zi)
+    tol_i = abs(p_eval)
+    p1_eval, _ = horner_eval(coeffs1[:-1], zi)
+    for j, zj in enumerate(zsc):
+        if i != j:
+            p1_eval -= p_eval / (zi - zj)
+    return tol_i, i, zi - p_eval / p1_eval
+
+
 def aberth_mt(
     coeffs: Sequence[float], zs: List[complex], options: Options = Options()
 ) -> Tuple[List[complex], int, bool]:
     """
-    Multithreaded Aberth method using ThreadPoolExecutor.
+    Multithreaded Aberth method using a thread pool.
 
     Parallelizes root updates across available CPUs while checking convergence
     in the main thread.
@@ -148,37 +172,7 @@ def aberth_mt(
     :param options: Algorithm configuration
     :return: Tuple of (refined roots, iterations, converged)
     """
-
-    def aberth_job(i: int, zsc: List[complex]) -> Tuple[float, int, complex]:
-        zi = zsc[i]
-        p_eval, coeffs1 = horner_eval(coeffs, zi)
-        tol_i = abs(p_eval)
-        p1_eval, _ = horner_eval(coeffs1[:-1], zi)
-        for j, zj in enumerate(zsc):
-            if i != j:
-                p1_eval -= p_eval / (zi - zj)
-        zi -= p_eval / p1_eval
-        return tol_i, i, zi
-
-    with ThreadPoolExecutor() as executor:
-        for niter in range(options.max_iters):
-            tolerance = 0.0
-            futures = []
-            zsc = zs[:]  # one snapshot per iteration (not one per job)
-
-            for i in range(len(zs)):
-                futures.append(executor.submit(aberth_job, i, zsc))
-
-            for future in futures:
-                tol_i, i, zi = future.result()
-                if tol_i > tolerance:
-                    tolerance = tol_i
-                zs[i] = zi
-
-            if tolerance < options.tolerance:
-                return zs, niter, True
-
-    return zs, options.max_iters, False
+    return jacobi_mt_run(lambda i, zsc: aberth_job(coeffs, i, zsc), zs, options)
 
 
 def aberth(
@@ -223,20 +217,7 @@ def aberth(
         >>> found
         True
     """
-    for niter in range(options.max_iters):
-        tolerance = 0.0
-        for i, zi in enumerate(zs):
-            p_eval, coeffs1 = horner_eval(coeffs, zi)
-            tol_i = abs(p_eval)
-            p1_eval, _ = horner_eval(coeffs1[:-1], zi)
-            tolerance = max(tol_i, tolerance)
-            for j, zj in enumerate(zs):
-                if i != j:
-                    p1_eval -= p_eval / (zi - zj)
-            zs[i] -= p_eval / p1_eval
-        if tolerance < options.tolerance:
-            return zs, niter, True
-    return zs, options.max_iters, False
+    return sequential_run(lambda i, zsc: aberth_job(coeffs, i, zsc), zs, options)
 
 
 def initial_aberth_autocorr(coeffs: Sequence[float]) -> List[complex]:
@@ -320,22 +301,9 @@ def aberth_autocorr(
         >>> opt.tolerance = 1e-8
         >>> zs, niter, found = aberth_autocorr(h, z0s, opt)
     """
-    for niter in range(options.max_iters):
-        tolerance: float = 0.0
-        for i, zi in enumerate(zs):
-            p_eval, coeffs1 = horner_eval(coeffs, zi)
-            tol_i = abs(p_eval)
-            p1_eval, _ = horner_eval(coeffs1[:-1], zi)
-            tolerance = max(tol_i, tolerance)
-            for j, zj in enumerate(zs):
-                if i == j:
-                    continue
-                p1_eval -= p_eval / (zi - zj)
-                p1_eval -= p_eval / (zi - 1.0 / zj)
-            zs[i] -= p_eval / p1_eval
-        if tolerance < options.tolerance:
-            return zs, niter, True
-    return zs, options.max_iters, False
+    return sequential_run(
+        lambda i, zsc: aberth_autocorr_job(coeffs, i, zsc), zs, options
+    )
 
 
 def aberth_autocorr_job(
@@ -380,25 +348,9 @@ def aberth_autocorr_mt(
     :param options: Algorithm configuration
     :return: Tuple of (refined roots, iterations, converged)
     """
-    with ThreadPoolExecutor() as executor:
-        for niter in range(options.max_iters):
-            tolerance = 0.0
-            futures = []
-            zsc = zs[:]  # one snapshot per iteration (not one per job)
-
-            for i in range(len(zs)):
-                futures.append(executor.submit(aberth_autocorr_job, coeffs, i, zsc))
-
-            for future in futures:
-                tol_i, i, zi = future.result()
-                if tol_i > tolerance:
-                    tolerance = tol_i
-                zs[i] = zi
-
-            if tolerance < options.tolerance:
-                return zs, niter, True
-
-    return zs, options.max_iters, False
+    return jacobi_mt_run(
+        lambda i, zsc: aberth_autocorr_job(coeffs, i, zsc), zs, options
+    )
 
 
 def leja_order(points: List[complex]) -> List[complex]:

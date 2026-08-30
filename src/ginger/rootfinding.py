@@ -41,6 +41,22 @@ class Options:
     tol_ind: float = 1e-15
 
 
+# Number of roots above which the multi-threaded policy is used by default.
+PARALLEL_THRESHOLD = 4
+
+
+def should_parallelize(num_roots: int) -> bool:
+    """Whether ``num_roots`` should use the multi-threaded execution policy.
+
+    Args:
+        num_roots: Number of roots (or quadratic factors).
+
+    Returns:
+        True when the problem is large enough to benefit from parallelism.
+    """
+    return num_roots > PARALLEL_THRESHOLD
+
+
 def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
     r"""Calculate adjustment vector for Bairstow's method.
 
@@ -312,6 +328,91 @@ def initial_guess(coeffs: List[float]) -> List[Vector2]:
     return [Vector2(2 * (center + t), -(quad_term + 2 * center * t)) for t in temp]
 
 
+def _bairstow_step(
+    coeffs: List[float],
+    degree: int,
+    i: int,
+    vri: Vector2,
+    vrs: List[Vector2],
+    robin: Robin,
+    autocorr: bool,
+    tol_ind: float,
+) -> Tuple[Vector2, float] | None:
+    """One Gauss-Seidel Bairstow update for factor ``i``.
+
+    Computes the Newton correction for the quadratic factor :math:`(r_i, q_i)`
+    while suppressing interference from all other factors. For
+    ``autocorr`` polynomials, reciprocal pairs are suppressed as well.
+
+    :param coeffs: Polynomial coefficients in descending order
+    :param degree: Degree of the polynomial
+    :param i: Index of the factor to update
+    :param vri: Current factor :math:`(r_i, q_i)`
+    :param vrs: All current factors (read-only for neighbors)
+    :param robin: Round-robin iterator for the neighbor scan
+    :param autocorr: Whether to suppress reciprocal root pairs
+    :param tol_ind: Per-root convergence tolerance
+    :return: ``(new_vri, tol_i)`` or ``None`` when already converged
+    """
+    coeffs1 = coeffs.copy()
+    vA = horner(coeffs1, degree, vri)
+    tol_i = max(abs(vA.x), abs(vA.y))
+    if tol_i < tol_ind:
+        return None
+    vA1 = horner(coeffs1, degree - 2, vri)
+    for j in robin.exclude(i):
+        vrj = vrs[j]
+        suppress_old(vA, vA1, vri, vrj)
+        if autocorr:
+            vrn = Vector2(-vrj.x, 1.0) / vrj.y
+            suppress_old(vA, vA1, vri, vrn)
+    if autocorr:
+        vrin = Vector2(-vri.x, 1.0) / vri.y
+        suppress_old(vA, vA1, vri, vrin)
+    return vri - delta(vA, vri, vA1), tol_i
+
+
+def _bairstow_solve(
+    coeffs: List[float],
+    vrs: List[Vector2],
+    options: Options,
+    autocorr: bool,
+) -> Tuple[List[Vector2], int, bool]:
+    """Gauss-Seidel Bairstow solve shared by the even and autocorr variants.
+
+    Iteratively refines :math:`m = n/2` quadratic factors using suppression
+    to decouple estimates. Each factor is updated by one Newton correction per
+    sweep; factors whose residual falls below ``tol_ind`` are marked converged
+    and skipped thereafter.
+
+    :param coeffs: Polynomial coefficients in descending order
+    :param vrs: Initial estimates for quadratic factors
+    :param options: Algorithm configuration parameters
+    :param autocorr: Whether to suppress reciprocal root pairs
+    :return: Tuple of (final root estimates, iterations performed, converged)
+    """
+    num_factors = len(vrs)
+    degree = len(coeffs) - 1
+    converged = [False] * num_factors
+    robin = Robin(num_factors)
+    for niter in range(options.max_iters):
+        tolerance = 0.0
+        for i, (vri, ci) in enumerate(zip(vrs, converged)):
+            if ci:
+                continue
+            step = _bairstow_step(
+                coeffs, degree, i, vri, vrs, robin, autocorr, options.tol_ind
+            )
+            if step is None:
+                converged[i] = True
+                continue
+            vrs[i], tol_i = step
+            tolerance = max(tol_i, tolerance)
+        if tolerance < options.tolerance:
+            return vrs, niter, True
+    return vrs, options.max_iters, False
+
+
 def pbairstow_even(
     coeffs: List[float], vrs: List[Vector2], options: Options = Options()
 ) -> Tuple[List[Vector2], int, bool]:
@@ -358,29 +459,7 @@ def pbairstow_even(
         >>> print(found)
         True
     """
-    num_factors = len(vrs)
-    degree = len(coeffs) - 1
-    converged = [False] * num_factors
-    robin = Robin(num_factors)
-    for niter in range(options.max_iters):
-        tolerance = 0.0
-        for i, (vri, ci) in enumerate(zip(vrs, converged)):
-            if ci:
-                continue
-            coeffs1 = coeffs.copy()
-            vA = horner(coeffs1, degree, vri)
-            tol_i = max(abs(vA.x), abs(vA.y))
-            if tol_i < options.tol_ind:
-                converged[i] = True
-                continue
-            vA1 = horner(coeffs1, degree - 2, vri)
-            tolerance = max(tol_i, tolerance)
-            for j in robin.exclude(i):
-                suppress_old(vA, vA1, vri, vrs[j])
-            vrs[i] -= delta(vA, vri, vA1)
-        if tolerance < options.tolerance:
-            return vrs, niter, True
-    return vrs, options.max_iters, False
+    return _bairstow_solve(coeffs, vrs, options, autocorr=False)
 
 
 def roots_from_quadratic(vr: Vector2) -> Tuple[complex, complex]:
