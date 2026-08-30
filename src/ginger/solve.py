@@ -10,7 +10,13 @@ from enum import Enum
 from typing import List, Sequence, Tuple
 
 from .aberth import aberth, aberth_autocorr, aberth_autocorr_mt, aberth_mt
-from .rootfinding import Options, _bairstow_solve, should_parallelize
+from .rootfinding import (
+    Options,
+    _bairstow_autocorr_step,
+    _bairstow_even_step,
+    _bairstow_solve,
+    should_parallelize,
+)
 
 
 class SolveMode(Enum):
@@ -44,7 +50,9 @@ def solve_aberth(
     if mode is SolveMode.MULTI_THREADED:
         return aberth_mt(coeffs, zs, options)
     return (
-        aberth_mt(coeffs, zs, options) if should_parallelize(len(zs)) else aberth(coeffs, zs, options)
+        aberth_mt(coeffs, zs, options)
+        if should_parallelize(len(zs))
+        else aberth(coeffs, zs, options)
     )
 
 
@@ -97,7 +105,7 @@ def solve_pbairstow_even(
     Returns:
         Tuple of (final factor estimates, iterations performed, converged).
     """
-    return _bairstow_solve(coeffs, vrs, options, autocorr=False)
+    return _bairstow_solve(coeffs, vrs, options, _bairstow_even_step)
 
 
 def solve_pbairstow_autocorr(
@@ -120,4 +128,4 @@ def solve_pbairstow_autocorr(
     Returns:
         Tuple of (final factor estimates, iterations performed, converged).
     """
-    return _bairstow_solve(coeffs, vrs, options, autocorr=True)
+    return _bairstow_solve(coeffs, vrs, options, _bairstow_autocorr_step)

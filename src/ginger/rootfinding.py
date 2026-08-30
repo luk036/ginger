@@ -17,7 +17,7 @@ Key functions:
 from functools import reduce
 from itertools import accumulate
 from math import sqrt
-from typing import Any, List, Sequence, Tuple, Union
+from typing import Any, Callable, List, Sequence, Tuple, Union
 
 from mywheel.robin import Robin
 
@@ -328,21 +328,19 @@ def initial_guess(coeffs: List[float]) -> List[Vector2]:
     return [Vector2(2 * (center + t), -(quad_term + 2 * center * t)) for t in temp]
 
 
-def _bairstow_step(
+def _bairstow_even_step(
     coeffs: List[float],
     degree: int,
     i: int,
     vri: Vector2,
     vrs: List[Vector2],
     robin: Robin,
-    autocorr: bool,
     tol_ind: float,
 ) -> Tuple[Vector2, float] | None:
-    """One Gauss-Seidel Bairstow update for factor ``i``.
+    """One Gauss-Seidel Bairstow update for factor ``i`` (even degree).
 
     Computes the Newton correction for the quadratic factor :math:`(r_i, q_i)`
-    while suppressing interference from all other factors. For
-    ``autocorr`` polynomials, reciprocal pairs are suppressed as well.
+    while suppressing interference from all other factors.
 
     :param coeffs: Polynomial coefficients in descending order
     :param degree: Degree of the polynomial
@@ -350,7 +348,6 @@ def _bairstow_step(
     :param vri: Current factor :math:`(r_i, q_i)`
     :param vrs: All current factors (read-only for neighbors)
     :param robin: Round-robin iterator for the neighbor scan
-    :param autocorr: Whether to suppress reciprocal root pairs
     :param tol_ind: Per-root convergence tolerance
     :return: ``(new_vri, tol_i)`` or ``None`` when already converged
     """
@@ -363,12 +360,46 @@ def _bairstow_step(
     for j in robin.exclude(i):
         vrj = vrs[j]
         suppress_old(vA, vA1, vri, vrj)
-        if autocorr:
-            vrn = Vector2(-vrj.x, 1.0) / vrj.y
-            suppress_old(vA, vA1, vri, vrn)
-    if autocorr:
-        vrin = Vector2(-vri.x, 1.0) / vri.y
-        suppress_old(vA, vA1, vri, vrin)
+    return vri - delta(vA, vri, vA1), tol_i
+
+
+def _bairstow_autocorr_step(
+    coeffs: List[float],
+    degree: int,
+    i: int,
+    vri: Vector2,
+    vrs: List[Vector2],
+    robin: Robin,
+    tol_ind: float,
+) -> Tuple[Vector2, float] | None:
+    """One Gauss-Seidel Bairstow update for factor ``i`` (auto-correlation).
+
+    Computes the Newton correction for the quadratic factor :math:`(r_i, q_i)`
+    while suppressing interference from all other factors and their reciprocal
+    images (palindromic symmetry).
+
+    :param coeffs: Polynomial coefficients in descending order
+    :param degree: Degree of the polynomial
+    :param i: Index of the factor to update
+    :param vri: Current factor :math:`(r_i, q_i)`
+    :param vrs: All current factors (read-only for neighbors)
+    :param robin: Round-robin iterator for the neighbor scan
+    :param tol_ind: Per-root convergence tolerance
+    :return: ``(new_vri, tol_i)`` or ``None`` when already converged
+    """
+    coeffs1 = coeffs.copy()
+    vA = horner(coeffs1, degree, vri)
+    tol_i = max(abs(vA.x), abs(vA.y))
+    if tol_i < tol_ind:
+        return None
+    vA1 = horner(coeffs1, degree - 2, vri)
+    for j in robin.exclude(i):
+        vrj = vrs[j]
+        suppress_old(vA, vA1, vri, vrj)
+        vrn = Vector2(-vrj.x, 1.0) / vrj.y
+        suppress_old(vA, vA1, vri, vrn)
+    vrin = Vector2(-vri.x, 1.0) / vri.y
+    suppress_old(vA, vA1, vri, vrin)
     return vri - delta(vA, vri, vA1), tol_i
 
 
@@ -376,7 +407,7 @@ def _bairstow_solve(
     coeffs: List[float],
     vrs: List[Vector2],
     options: Options,
-    autocorr: bool,
+    step: Callable[..., Tuple[Vector2, float] | None],
 ) -> Tuple[List[Vector2], int, bool]:
     """Gauss-Seidel Bairstow solve shared by the even and autocorr variants.
 
@@ -388,7 +419,8 @@ def _bairstow_solve(
     :param coeffs: Polynomial coefficients in descending order
     :param vrs: Initial estimates for quadratic factors
     :param options: Algorithm configuration parameters
-    :param autocorr: Whether to suppress reciprocal root pairs
+    :param step: Per-factor update function (``_bairstow_even_step`` or
+        ``_bairstow_autocorr_step``)
     :return: Tuple of (final root estimates, iterations performed, converged)
     """
     num_factors = len(vrs)
@@ -400,13 +432,11 @@ def _bairstow_solve(
         for i, (vri, ci) in enumerate(zip(vrs, converged)):
             if ci:
                 continue
-            step = _bairstow_step(
-                coeffs, degree, i, vri, vrs, robin, autocorr, options.tol_ind
-            )
-            if step is None:
+            result = step(coeffs, degree, i, vri, vrs, robin, options.tol_ind)
+            if result is None:
                 converged[i] = True
                 continue
-            vrs[i], tol_i = step
+            vrs[i], tol_i = result
             tolerance = max(tol_i, tolerance)
         if tolerance < options.tolerance:
             return vrs, niter, True
@@ -459,7 +489,7 @@ def pbairstow_even(
         >>> print(found)
         True
     """
-    return _bairstow_solve(coeffs, vrs, options, autocorr=False)
+    return _bairstow_solve(coeffs, vrs, options, _bairstow_even_step)
 
 
 def roots_from_quadratic(vr: Vector2) -> Tuple[complex, complex]:

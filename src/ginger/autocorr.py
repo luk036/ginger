@@ -15,7 +15,12 @@ Key functions:
 from math import sqrt
 from typing import List, Tuple
 
-from .rootfinding import Options, _bairstow_solve, roots_from_quadratic
+from .rootfinding import (
+    Options,
+    _bairstow_autocorr_step,
+    _bairstow_solve,
+    roots_from_quadratic,
+)
 from .vector2 import Vector2
 
 
@@ -72,7 +77,7 @@ def pbairstow_autocorr(
         >>> found
         True
     """
-    return _bairstow_solve(coeffs, vrs, options, autocorr=True)
+    return _bairstow_solve(coeffs, vrs, options, _bairstow_autocorr_step)
 
 
 def poly_from_autocorr_factors(vrs: List[Vector2]) -> List[float]:
