@@ -26,9 +26,36 @@ from typing import List, Sequence, Tuple, Union
 from lds_gen.lds import TWO_PI, VdCorput
 
 from ._policy import jacobi_mt_run, sequential_run
-from .rootfinding import Options, horner_eval, horner_eval_f
+from .rootfinding import (
+    Options,
+    horner_eval,
+    horner_eval_f,
+    horner_eval_pp,
+    residual_scale,
+)
 
 Num = Union[float, complex]
+
+__all__ = [
+    "Options",
+    "aberth",
+    "aberth_autocorr",
+    "aberth_autocorr_job",
+    "aberth_autocorr_mt",
+    "aberth_job",
+    "aberth_mt",
+    "horner_backward",
+    "horner_eval",
+    "horner_eval_f",
+    "horner_eval_pp",
+    "initial_aberth",
+    "initial_aberth_autocorr",
+    "initial_aberth_autocorr_orig",
+    "initial_aberth_orig",
+    "leja_order",
+    "poly_from_autocorr_roots",
+    "poly_from_roots",
+]
 
 # ---------------------------------------------------------------------------
 # Precomputed LDS tables (replaces runtime Circle/VdCorput generation)
@@ -149,9 +176,8 @@ def aberth_job(
     :return: Tuple of (residual at z_i, root index, new root estimate)
     """
     zi = zsc[i]
-    p_eval, coeffs1 = horner_eval(coeffs, zi)
+    p_eval, p1_eval = horner_eval_pp(coeffs, zi)
     tol_i = abs(p_eval)
-    p1_eval, _ = horner_eval(coeffs1[:-1], zi)
     for j, zj in enumerate(zsc):
         if i != j:
             p1_eval -= p_eval / (zi - zj)
@@ -172,6 +198,7 @@ def aberth_mt(
     :param options: Algorithm configuration
     :return: Tuple of (refined roots, iterations, converged)
     """
+    coeffs = [c / residual_scale(coeffs) for c in coeffs]
     return jacobi_mt_run(lambda i, zsc: aberth_job(coeffs, i, zsc), zs, options)
 
 
@@ -217,6 +244,7 @@ def aberth(
         >>> found
         True
     """
+    coeffs = [c / residual_scale(coeffs) for c in coeffs]
     return sequential_run(lambda i, zsc: aberth_job(coeffs, i, zsc), zs, options)
 
 
@@ -301,6 +329,7 @@ def aberth_autocorr(
         >>> opt.tolerance = 1e-8
         >>> zs, niter, found = aberth_autocorr(h, z0s, opt)
     """
+    coeffs = [c / residual_scale(coeffs) for c in coeffs]
     return sequential_run(
         lambda i, zsc: aberth_autocorr_job(coeffs, i, zsc), zs, options
     )
@@ -323,9 +352,8 @@ def aberth_autocorr_job(
     :return: Tuple of (residual at zi, root index, new root estimate)
     """
     zi = zsc[i]
-    p_eval, coeffs1 = horner_eval(coeffs, zi)
+    p_eval, p1_eval = horner_eval_pp(coeffs, zi)
     tol_i = abs(p_eval)
-    p1_eval, _ = horner_eval(coeffs1[:-1], zi)
     for j, zj in enumerate(zsc):
         if i != j:
             p1_eval -= p_eval / (zi - zj)
@@ -348,6 +376,7 @@ def aberth_autocorr_mt(
     :param options: Algorithm configuration
     :return: Tuple of (refined roots, iterations, converged)
     """
+    coeffs = [c / residual_scale(coeffs) for c in coeffs]
     return jacobi_mt_run(
         lambda i, zsc: aberth_autocorr_job(coeffs, i, zsc), zs, options
     )
@@ -380,15 +409,23 @@ def leja_order(points: List[complex]) -> List[complex]:
     sorted_pts = sorted(points, key=abs)
     result = [sorted_pts[0]]
     remaining = sorted_pts[1:]
+    if not remaining:
+        return result
+    dists = [abs(p - result[0]) for p in remaining]
     while remaining:
         best_idx = 0
-        best_dist = -1.0
-        for i, p in enumerate(remaining):
-            min_dist = min(abs(p - q) for q in result)
-            if min_dist > best_dist:
-                best_dist = min_dist
+        best_dist = dists[0]
+        for i in range(1, len(dists)):
+            if dists[i] > best_dist:
+                best_dist = dists[i]
                 best_idx = i
-        result.append(remaining.pop(best_idx))
+        chosen = remaining.pop(best_idx)
+        dists.pop(best_idx)
+        result.append(chosen)
+        for i, p in enumerate(remaining):
+            d = abs(p - chosen)
+            if d < dists[i]:
+                dists[i] = d
     return result
 
 

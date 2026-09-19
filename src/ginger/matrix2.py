@@ -41,7 +41,7 @@ class Matrix2:
     _x: Vector2
     _y: Vector2
 
-    def __init__(self, x: Vector2, y: Vector2):
+    def __init__(self, x: Vector2, y: Vector2) -> None:
         """
         Initialize the 2x2 matrix from two row vectors.
 

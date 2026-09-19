@@ -57,6 +57,31 @@ def should_parallelize(num_roots: int) -> bool:
     return num_roots > PARALLEL_THRESHOLD
 
 
+def residual_scale(coeffs: Sequence[Num]) -> float:
+    r"""Normalisation factor making the convergence test scale-invariant.
+
+    At a root, :math:`|P(z)|` has a floating-point floor proportional to the
+    coefficient magnitudes. A fixed *absolute* tolerance is therefore
+    unreachable for badly scaled polynomials, and the solver burns every
+    iteration up to ``max_iters`` even though the roots are already accurate.
+    Dividing the coefficients by this factor (roots are invariant under
+    scaling :math:`P \mapsto P/s`) makes ``Options.tolerance`` relative.
+
+    The factor is floored at ``1.0`` so the historical absolute test is never
+    made *stricter* for well-scaled polynomials.
+
+    :param coeffs: Polynomial coefficients in descending order
+    :return: Scale factor, at least ``1.0``
+
+    Examples:
+        >>> residual_scale([10.0, 150.0, 10.0])
+        150.0
+        >>> residual_scale([0.1, 0.2])
+        1.0
+    """
+    return max(1.0, max(abs(c) for c in coeffs))
+
+
 def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
     r"""Calculate adjustment vector for Bairstow's method.
 
@@ -85,11 +110,24 @@ def delta(vA: Vector2, vr: Vector2, vp: Vector2) -> Vector2:
     """
     r_coeff, q_coeff = vr.x, vr.y
     p_coeff, s_coeff = vp.x, vp.y
-    mp = Matrix2(
-        Vector2(s_coeff, -p_coeff),
-        Vector2(-p_coeff * q_coeff, p_coeff * r_coeff + s_coeff),
+    dx, dy = _delta_step(vA.x, vA.y, r_coeff, q_coeff, p_coeff, s_coeff)
+    return Vector2(dx, dy)  # 6 mul's + 2 div's
+
+
+def _delta_step(
+    a_val: float,
+    b_val: float,
+    r_coeff: float,
+    q_coeff: float,
+    p_coeff: float,
+    s_coeff: float,
+) -> Tuple[float, float]:
+    """Float core of :func:`delta`, avoiding Vector2/Matrix2 allocation."""
+    det = s_coeff * (p_coeff * r_coeff + s_coeff) - (-p_coeff) * (-p_coeff * q_coeff)
+    return (
+        (s_coeff * a_val - p_coeff * b_val) / det,
+        ((-p_coeff * q_coeff) * a_val + (p_coeff * r_coeff + s_coeff) * b_val) / det,
     )
-    return mp.mdot(vA) / mp.det()  # 6 mul's + 2 div's
 
 
 def suppress_old(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2) -> None:
@@ -120,23 +158,40 @@ def suppress_old(vA: Vector2, vA1: Vector2, vri: Vector2, vrj: Vector2) -> None:
         >>> print(dr)
         <-16.78082191780822, 1.4383561643835616>
     """
-    A_val, B_val = vA.x, vA.y
-    A1_val, B1_val = vA1.x, vA1.y
-    vp = vri - vrj
-    r_coeff, q_coeff = vri.x, vri.y
-    p_coeff, s_coeff = vp.x, vp.y
+    new_a, new_b, new_a1, new_b1 = _suppress_old_step(
+        vA.x, vA.y, vA1.x, vA1.y, vri.x, vri.y, vrj.x, vrj.y
+    )
+    vA._x, vA._y = new_a, new_b
+    vA1._x, vA1._y = new_a1, new_b1
+    # return delta(vA, vri, Vector2(vA1._x, -vA1._y))
+
+
+def _suppress_old_step(
+    a_val: float,
+    b_val: float,
+    a1_val: float,
+    b1_val: float,
+    r_coeff: float,
+    q_coeff: float,
+    rj_coeff: float,
+    qj_coeff: float,
+) -> Tuple[float, float, float, float]:
+    """Float core of :func:`suppress_old`, avoiding Vector2 allocation."""
+    p_coeff = r_coeff - rj_coeff
+    s_coeff = q_coeff - qj_coeff
     f_val = r_coeff * p_coeff + s_coeff
     qp_val = q_coeff * p_coeff
     e_val = f_val * s_coeff - qp_val * p_coeff
-    new_a = (A_val * s_coeff - B_val * p_coeff) / e_val
-    new_b = (B_val * f_val - A_val * qp_val) / e_val
-    c_val = A1_val - new_a
-    d_val = (B1_val - new_b) - new_a * p_coeff
-    vA._x = new_a
-    vA._y = new_b
-    vA1._x = (c_val * s_coeff - d_val * p_coeff) / e_val
-    vA1._y = (d_val * f_val - c_val * qp_val) / e_val
-    # return delta(vA, vri, Vector2(vA1._x, -vA1._y))
+    new_a = (a_val * s_coeff - b_val * p_coeff) / e_val
+    new_b = (b_val * f_val - a_val * qp_val) / e_val
+    c_val = a1_val - new_a
+    d_val = (b1_val - new_b) - new_a * p_coeff
+    return (
+        new_a,
+        new_b,
+        (c_val * s_coeff - d_val * p_coeff) / e_val,
+        (d_val * f_val - c_val * qp_val) / e_val,
+    )
 
 
 def suppress(
@@ -242,6 +297,33 @@ def horner_eval(coeffs: Sequence[Num], zval: Num) -> Tuple[Any, List[Num]]:
     return coeffs[-1], coeffs
 
 
+def horner_eval_pp(coeffs: Sequence[Num], zval: Num) -> Tuple[Num, Num]:
+    r"""Evaluate a polynomial and its derivative in a single Horner pass.
+
+    Computes :math:`P(z)` and :math:`P'(z)` together, without materialising
+    the intermediate quotient coefficients:
+
+    .. math::
+
+       p' &\leftarrow p' \cdot z + p \\
+       p  &\leftarrow p \cdot z + c_k
+
+    :param coeffs: Polynomial coefficients in descending order of degree
+    :param zval: Point at which to evaluate
+    :return: Tuple of :math:`(P(z), P'(z))`
+
+    Examples:
+        >>> horner_eval_pp([1, -8, -72, 382, 727, -2310], 3)
+        (960.0, 616.0)
+    """
+    p_eval: Num = 0.0
+    p1_eval: Num = 0.0
+    for coeff in coeffs:
+        p1_eval = p1_eval * zval + p_eval
+        p_eval = p_eval * zval + coeff
+    return p_eval, p1_eval
+
+
 #
 #                       ⎛ 2            ⎞
 #        P(x) = P (x) ⋅ ⎝x  - r ⋅ x - q⎠ + A ⋅ x + B
@@ -285,10 +367,18 @@ def horner(coeffs: List[float], degree: int, vr: Vector2) -> Vector2:
         >>> coeffs
         [1, -6, -81, 202, 888, -1704]
     """
+    a_val, b_val = _horner_quadratic(coeffs, degree, vr.x, vr.y)
+    return Vector2(a_val, b_val)
+
+
+def _horner_quadratic(
+    coeffs: List[float], degree: int, r_coeff: float, q_coeff: float
+) -> Tuple[float, float]:
+    """Float core of :func:`horner`, returning the remainder ``(A, B)``."""
     for i in range(0, degree - 1):
-        coeffs[i + 1] += coeffs[i] * vr.x
-        coeffs[i + 2] += coeffs[i] * vr.y
-    return Vector2(coeffs[degree - 1], coeffs[degree])
+        coeffs[i + 1] += coeffs[i] * r_coeff
+        coeffs[i + 2] += coeffs[i] * q_coeff
+    return coeffs[degree - 1], coeffs[degree]
 
 
 def initial_guess(coeffs: List[float]) -> List[Vector2]:
@@ -332,11 +422,10 @@ def _bairstow_even_step(
     coeffs: List[float],
     degree: int,
     i: int,
-    vri: Vector2,
-    vrs: List[Vector2],
-    robin: Robin,
+    rq: List[Tuple[float, float]],
+    nb: List[int],
     tol_ind: float,
-) -> Tuple[Vector2, float] | None:
+) -> Tuple[Tuple[float, float], float] | None:
     """One Gauss-Seidel Bairstow update for factor ``i`` (even degree).
 
     Computes the Newton correction for the quadratic factor :math:`(r_i, q_i)`
@@ -345,33 +434,35 @@ def _bairstow_even_step(
     :param coeffs: Polynomial coefficients in descending order
     :param degree: Degree of the polynomial
     :param i: Index of the factor to update
-    :param vri: Current factor :math:`(r_i, q_i)`
-    :param vrs: All current factors (read-only for neighbors)
-    :param robin: Round-robin iterator for the neighbor scan
+    :param rq: All current factors as ``(r, q)`` pairs (read-only for neighbors)
+    :param nb: Precomputed neighbor indices in round-robin order
     :param tol_ind: Per-root convergence tolerance
-    :return: ``(new_vri, tol_i)`` or ``None`` when already converged
+    :return: ``((r, q), tol_i)`` or ``None`` when already converged
     """
+    r_coeff, q_coeff = rq[i]
     coeffs1 = coeffs.copy()
-    vA = horner(coeffs1, degree, vri)
-    tol_i = max(abs(vA.x), abs(vA.y))
+    a_val, b_val = _horner_quadratic(coeffs1, degree, r_coeff, q_coeff)
+    tol_i = max(abs(a_val), abs(b_val))
     if tol_i < tol_ind:
         return None
-    vA1 = horner(coeffs1, degree - 2, vri)
-    for j in robin.exclude(i):
-        vrj = vrs[j]
-        suppress_old(vA, vA1, vri, vrj)
-    return vri - delta(vA, vri, vA1), tol_i
+    a1_val, b1_val = _horner_quadratic(coeffs1, degree - 2, r_coeff, q_coeff)
+    for j in nb:
+        rj_coeff, qj_coeff = rq[j]
+        a_val, b_val, a1_val, b1_val = _suppress_old_step(
+            a_val, b_val, a1_val, b1_val, r_coeff, q_coeff, rj_coeff, qj_coeff
+        )
+    dx, dy = _delta_step(a_val, b_val, r_coeff, q_coeff, a1_val, b1_val)
+    return (r_coeff - dx, q_coeff - dy), tol_i
 
 
 def _bairstow_autocorr_step(
     coeffs: List[float],
     degree: int,
     i: int,
-    vri: Vector2,
-    vrs: List[Vector2],
-    robin: Robin,
+    rq: List[Tuple[float, float]],
+    nb: List[int],
     tol_ind: float,
-) -> Tuple[Vector2, float] | None:
+) -> Tuple[Tuple[float, float], float] | None:
     """One Gauss-Seidel Bairstow update for factor ``i`` (auto-correlation).
 
     Computes the Newton correction for the quadratic factor :math:`(r_i, q_i)`
@@ -381,33 +472,52 @@ def _bairstow_autocorr_step(
     :param coeffs: Polynomial coefficients in descending order
     :param degree: Degree of the polynomial
     :param i: Index of the factor to update
-    :param vri: Current factor :math:`(r_i, q_i)`
-    :param vrs: All current factors (read-only for neighbors)
-    :param robin: Round-robin iterator for the neighbor scan
+    :param rq: All current factors as ``(r, q)`` pairs (read-only for neighbors)
+    :param nb: Precomputed neighbor indices in round-robin order
     :param tol_ind: Per-root convergence tolerance
-    :return: ``(new_vri, tol_i)`` or ``None`` when already converged
+    :return: ``((r, q), tol_i)`` or ``None`` when already converged
     """
+    r_coeff, q_coeff = rq[i]
     coeffs1 = coeffs.copy()
-    vA = horner(coeffs1, degree, vri)
-    tol_i = max(abs(vA.x), abs(vA.y))
+    a_val, b_val = _horner_quadratic(coeffs1, degree, r_coeff, q_coeff)
+    tol_i = max(abs(a_val), abs(b_val))
     if tol_i < tol_ind:
         return None
-    vA1 = horner(coeffs1, degree - 2, vri)
-    for j in robin.exclude(i):
-        vrj = vrs[j]
-        suppress_old(vA, vA1, vri, vrj)
-        vrn = Vector2(-vrj.x, 1.0) / vrj.y
-        suppress_old(vA, vA1, vri, vrn)
-    vrin = Vector2(-vri.x, 1.0) / vri.y
-    suppress_old(vA, vA1, vri, vrin)
-    return vri - delta(vA, vri, vA1), tol_i
+    a1_val, b1_val = _horner_quadratic(coeffs1, degree - 2, r_coeff, q_coeff)
+    for j in nb:
+        rj_coeff, qj_coeff = rq[j]
+        a_val, b_val, a1_val, b1_val = _suppress_old_step(
+            a_val, b_val, a1_val, b1_val, r_coeff, q_coeff, rj_coeff, qj_coeff
+        )
+        a_val, b_val, a1_val, b1_val = _suppress_old_step(
+            a_val,
+            b_val,
+            a1_val,
+            b1_val,
+            r_coeff,
+            q_coeff,
+            -rj_coeff / qj_coeff,
+            1.0 / qj_coeff,
+        )
+    a_val, b_val, a1_val, b1_val = _suppress_old_step(
+        a_val,
+        b_val,
+        a1_val,
+        b1_val,
+        r_coeff,
+        q_coeff,
+        -r_coeff / q_coeff,
+        1.0 / q_coeff,
+    )
+    dx, dy = _delta_step(a_val, b_val, r_coeff, q_coeff, a1_val, b1_val)
+    return (r_coeff - dx, q_coeff - dy), tol_i
 
 
 def _bairstow_solve(
     coeffs: List[float],
     vrs: List[Vector2],
     options: Options,
-    step: Callable[..., Tuple[Vector2, float] | None],
+    step: Callable[..., Tuple[Tuple[float, float], float] | None],
 ) -> Tuple[List[Vector2], int, bool]:
     """Gauss-Seidel Bairstow solve shared by the even and autocorr variants.
 
@@ -423,23 +533,29 @@ def _bairstow_solve(
         ``_bairstow_autocorr_step``)
     :return: Tuple of (final root estimates, iterations performed, converged)
     """
+    scale = residual_scale(coeffs)
+    coeffs = [c / scale for c in coeffs]
     num_factors = len(vrs)
     degree = len(coeffs) - 1
+    rq = [(v.x, v.y) for v in vrs]
     converged = [False] * num_factors
     robin = Robin(num_factors)
+    neighbors = [list(robin.exclude(i)) for i in range(num_factors)]
     for niter in range(options.max_iters):
         tolerance = 0.0
-        for i, (vri, ci) in enumerate(zip(vrs, converged)):
-            if ci:
+        for i in range(num_factors):
+            if converged[i]:
                 continue
-            result = step(coeffs, degree, i, vri, vrs, robin, options.tol_ind)
+            result = step(coeffs, degree, i, rq, neighbors[i], options.tol_ind)
             if result is None:
                 converged[i] = True
                 continue
-            vrs[i], tol_i = result
+            rq[i], tol_i = result
             tolerance = max(tol_i, tolerance)
         if tolerance < options.tolerance:
+            vrs[:] = [Vector2(r, q) for r, q in rq]
             return vrs, niter, True
+    vrs[:] = [Vector2(r, q) for r, q in rq]
     return vrs, options.max_iters, False
 
 

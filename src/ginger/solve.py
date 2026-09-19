@@ -2,8 +2,7 @@
 
 Mirrors ``include/ginger/solve.hpp`` in ginger-cpp: each solver exposes a
 facade that dispatches to the single-threaded or multithreaded variant based
-on the problem size (via :func:`ginger.rootfinding.should_parallelize`) or an
-explicit :class:`SolveMode`.
+on an explicit :class:`SolveMode`.
 """
 
 from enum import Enum
@@ -15,12 +14,18 @@ from .rootfinding import (
     _bairstow_autocorr_step,
     _bairstow_even_step,
     _bairstow_solve,
-    should_parallelize,
 )
 
 
 class SolveMode(Enum):
-    """Execution policy selector for the solver facades."""
+    """Execution policy selector for the solver facades.
+
+    ``AUTOMATIC`` selects the single-threaded variant. The per-root jobs are
+    pure-Python arithmetic that never releases the GIL, so the thread pool is a
+    net loss (measured 2-9x slower than sequential). ``MULTI_THREADED`` is kept
+    for API parity with ginger-cpp and for callers that supply GIL-releasing
+    work.
+    """
 
     AUTOMATIC = "automatic"
     SEQUENTIAL = "sequential"
@@ -39,21 +44,16 @@ def solve_aberth(
         coeffs: Polynomial coefficients in descending order.
         zs: Initial root guesses.
         options: Algorithm configuration.
-        mode: Execution policy; ``AUTOMATIC`` dispatches to the
-            multithreaded variant when :func:`should_parallelize` holds.
+        mode: Execution policy. ``AUTOMATIC`` and ``SEQUENTIAL`` both use the
+            single-threaded variant; ``MULTI_THREADED`` opts into the thread
+            pool. See :class:`SolveMode` for why ``AUTOMATIC`` is sequential.
 
     Returns:
         Tuple of (refined roots, iterations performed, converged).
     """
-    if mode is SolveMode.SEQUENTIAL:
-        return aberth(coeffs, zs, options)
     if mode is SolveMode.MULTI_THREADED:
         return aberth_mt(coeffs, zs, options)
-    return (
-        aberth_mt(coeffs, zs, options)
-        if should_parallelize(len(zs))
-        else aberth(coeffs, zs, options)
-    )
+    return aberth(coeffs, zs, options)
 
 
 def solve_aberth_autocorr(
@@ -68,21 +68,16 @@ def solve_aberth_autocorr(
         coeffs: Polynomial coefficients in descending order.
         zs: Initial root guesses.
         options: Algorithm configuration.
-        mode: Execution policy; ``AUTOMATIC`` dispatches to the
-            multithreaded variant when :func:`should_parallelize` holds.
+        mode: Execution policy. ``AUTOMATIC`` and ``SEQUENTIAL`` both use the
+            single-threaded variant; ``MULTI_THREADED`` opts into the thread
+            pool. See :class:`SolveMode` for why ``AUTOMATIC`` is sequential.
 
     Returns:
         Tuple of (refined roots, iterations performed, converged).
     """
-    if mode is SolveMode.SEQUENTIAL:
-        return aberth_autocorr(coeffs, zs, options)
     if mode is SolveMode.MULTI_THREADED:
         return aberth_autocorr_mt(coeffs, zs, options)
-    return (
-        aberth_autocorr_mt(coeffs, zs, options)
-        if should_parallelize(len(zs))
-        else aberth_autocorr(coeffs, zs, options)
-    )
+    return aberth_autocorr(coeffs, zs, options)
 
 
 def solve_pbairstow_even(
