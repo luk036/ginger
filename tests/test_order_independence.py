@@ -47,10 +47,7 @@ def max_root_set_diff(
 ) -> float:
     """Maximum coordinate-wise difference between two sorted root sets."""
     return max(
-        (
-            max(abs(x[0] - y[0]), abs(x[1] - y[1]))
-            for x, y in zip(a, b)
-        ),
+        (max(abs(x[0] - y[0]), abs(x[1] - y[1])) for x, y in zip(a, b)),
         default=0.0,
     )
 
@@ -97,9 +94,7 @@ def test_jacobi_sweep_order_independent_bit_identical() -> None:
     vrs0 = initial_guess(H8)
     orders = [[0, 1, 2, 3], [3, 2, 1, 0], [1, 3, 0, 2], [2, 0, 3, 1]]
 
-    next_states = [
-        jacobi_sweep(H8, vrs0, order)[0] for order in orders
-    ]
+    next_states = [jacobi_sweep(H8, vrs0, order)[0] for order in orders]
 
     ref = next_states[0]
     for k, state in enumerate(next_states[1:], start=1):

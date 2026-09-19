@@ -1,7 +1,12 @@
 """Tests for the solve() facade entry points (auto policy selection)."""
 
 from ginger.rootfinding import Options, initial_guess, should_parallelize
-from ginger.solve import SolveMode, solve_aberth, solve_aberth_autocorr, solve_pbairstow_even
+from ginger.solve import (
+    SolveMode,
+    solve_aberth,
+    solve_aberth_autocorr,
+    solve_pbairstow_even,
+)
 
 
 def test_should_parallelize_threshold() -> None:
