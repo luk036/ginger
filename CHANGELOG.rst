@@ -2,6 +2,67 @@
 Changelog
 =========
 
+Version 0.5 (2026-10-09)
+========================
+
+Features
+--------
+- **Solve facade + execution policies**: Added ``src/ginger/solve.py``
+  (``SolveMode`` + ``solve_*`` facades, ``PARALLEL_THRESHOLD`` /
+  ``should_parallelize``) and ``src/ginger/_policy.py``
+  (``sequential_run`` / ``jacobi_mt_run`` execution policies, Strategy).
+  (#e126a57)
+
+Performance
+-----------
+- **Scale-aware convergence, fused Horner, O(n^2) Leja order**:
+  ``residual_scale()`` normalizes the polynomial so ``Options.tolerance`` is a
+  *relative* test — the old absolute test was unreachable for large-coefficient
+  polynomials (degree 16 burned all 2000 iterations while its roots were
+  accurate to 4.7e-14). ``horner_eval_pp()`` evaluates P and P' in one pass;
+  float cores ``_delta_step`` / ``_suppress_old_step`` / ``_horner_quadratic``
+  replace ``Vector2`` / ``Matrix2`` churn in the Bairstow hot loop;
+  ``leja_order`` is O(n^2) (was O(n^3), bit-identical output); ``AUTOMATIC`` no
+  longer dispatches to the GIL-bound thread pool (measured 2-9x slower);
+  round-robin neighbours are precomputed. (#f532f89)
+
+Bug Fixes
+---------
+- **Unused ``suppress`` import**: Removed. (#0f2cb9c)
+
+Testing & Code Quality
+----------------------
+- **Order-independence tests**: Added 4 tests verifying bit-identical Jacobi
+  next state under any processing order, root-set invariance under permuted
+  guesses, machine-epsilon suppression-order drift, and Gauss-Seidel
+  iteration-count order-dependence. (#a6205ae)
+- **Facade tests**: Added ``test_solve.py``. (#e126a57)
+- **Scaling benchmark**: Added ``bench/test_scaling.py`` guarding niter /
+  converged. (#f532f89)
+
+Code Cleanup
+------------
+- **Refactor**: Split the Bairstow steps into even/autocorr variants (dropping
+  the autocorr flag) and deduped the job functions. (#20d545d, #e126a57)
+- **Removed AI slop**: Stripped boilerplate from docstrings and comments;
+  formatted test files and a signature with black. (#dc6e27c, #95fd9df, #503d51c)
+- **Config**: Moved flake8 config into a dedicated ``.flake8`` (fixing the stale
+  PyScaffold project URLs) and stripped the empty ``entry_points`` section from
+  ``setup.cfg``. (#a9970e1, #fd051a2)
+
+Documentation
+-------------
+- **Order-independence analysis**: Added the corrected ``order-matter.md``
+  report, documenting that bit-for-bit order-independence holds only for
+  Jacobi-style iteration while the single-threaded variants are
+  order-dependent. (#fc38e01)
+- **AGENTS.md**: Added agent guidelines. (#f5b3ca2)
+
+Build & CI
+----------
+- **Updated GitHub Actions**: checkout->v4, setup-python->v5,
+  codecov-action->v4; removed the stale ``.bak`` workflow. (#c43302f, #c9d3b43)
+
 Version 0.4 (2026-07-16)
 ========================
 
