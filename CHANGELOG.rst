@@ -2,6 +2,14 @@
 Changelog
 =========
 
+Version 0.6 (2026-11-20)
+========================
+
+Build & CI
+----------
+
+- **Pin NumPy < 2.0 in CI**: Avoids the NumPy 2 ABI break in the CI environment. (#3fbbaf0)
+
 Version 0.5 (2026-10-09)
 ========================
 
